@@ -1,0 +1,1361 @@
+<title>KRP Bread Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --paper:#FAF8F2; --surface:#FFFFFF; --surface-2:#F1EEE4; --inset:#F6F3EA;
+    --ink:#241F18; --ink-2:#6D665A; --ink-3:#948C7C;
+    --line:#E4DECF; --line-2:#EEE9DC;
+    --accent:#6C48A6; --accent-ink:#FFFFFF; --accent-soft:#EEE8F7;
+    --good:#2E7D51; --good-soft:#E4F1E9;
+    --warn:#A9761F; --warn-soft:#F6ECD8;
+    --bad:#B23B39; --bad-soft:#F7E4E3;
+    --p-malunggay:#4E7C43; --p-ube:#7E5BB0; --p-spanish:#BE8329; --p-other:#5A7A8C;
+    --shadow:0 1px 2px rgba(40,32,16,.04), 0 6px 20px -12px rgba(40,32,16,.18);
+    --radius:14px; --radius-sm:9px;
+    --maxw:1080px;
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:#16130E; --surface:#1F1B15; --surface-2:#2A251D; --inset:#241F18;
+      --ink:#F1EBDE; --ink-2:#A79E8C; --ink-3:#7C7362;
+      --line:#352E23; --line-2:#2C261D;
+      --accent:#B79BE4; --accent-ink:#1B1524; --accent-soft:#2C2440;
+      --good:#74C295; --good-soft:#1E2F26;
+      --warn:#DBAF66; --warn-soft:#332A19;
+      --bad:#E58F8D; --bad-soft:#33211F;
+      --p-malunggay:#8CBE7F; --p-ube:#BB9CE6; --p-spanish:#DDAF6A; --p-other:#8FB0C0;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 26px -14px rgba(0,0,0,.6);
+      color-scheme:dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#16130E; --surface:#1F1B15; --surface-2:#2A251D; --inset:#241F18;
+    --ink:#F1EBDE; --ink-2:#A79E8C; --ink-3:#7C7362;
+    --line:#352E23; --line-2:#2C261D;
+    --accent:#B79BE4; --accent-ink:#1B1524; --accent-soft:#2C2440;
+    --good:#74C295; --good-soft:#1E2F26;
+    --warn:#DBAF66; --warn-soft:#332A19;
+    --bad:#E58F8D; --bad-soft:#33211F;
+    --p-malunggay:#8CBE7F; --p-ube:#BB9CE6; --p-spanish:#DDAF6A; --p-other:#8FB0C0;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 26px -14px rgba(0,0,0,.6);
+    color-scheme:dark;
+  }
+
+  * { box-sizing:border-box; }
+  html, body { margin:0; }
+  body {
+    background:var(--paper); color:var(--ink);
+    font-family:"IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size:15px; line-height:1.5; -webkit-text-size-adjust:100%;
+  }
+  h1,h2,h3 { font-family:"Fraunces", Georgia, "Times New Roman", serif; font-weight:600; margin:0; line-height:1.15; text-wrap:balance; }
+  button, input, select, textarea { font:inherit; color:inherit; }
+  a { color:var(--accent); }
+  .mono { font-family:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-variant-numeric:tabular-nums; }
+  .num { font-family:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace; font-variant-numeric:tabular-nums; }
+
+  /* ---------- shell ---------- */
+  .app { display:grid; grid-template-columns:232px minmax(0,1fr); min-height:100vh; max-width:var(--maxw); margin:0 auto; }
+  .side {
+    border-right:1px solid var(--line); padding:22px 16px 24px; position:sticky; top:0; align-self:start;
+    height:100vh; display:flex; flex-direction:column; gap:6px;
+  }
+  .brand { display:flex; align-items:center; gap:10px; padding:4px 8px 16px; }
+  .brand .mark {
+    width:34px; height:34px; border-radius:9px; background:var(--accent); color:var(--accent-ink);
+    display:grid; place-items:center; font-family:"Fraunces",serif; font-weight:600; font-size:18px; flex:none;
+  }
+  .brand b { font-family:"Fraunces",serif; font-weight:600; font-size:17px; letter-spacing:.2px; }
+  .brand span { display:block; font-size:11px; color:var(--ink-3); letter-spacing:.14em; text-transform:uppercase; margin-top:1px; }
+  .nav { display:flex; flex-direction:column; gap:2px; }
+  .nav button {
+    display:flex; align-items:center; gap:11px; width:100%; text-align:left; background:none; border:0;
+    padding:9px 10px; border-radius:9px; color:var(--ink-2); cursor:pointer; font-weight:500;
+  }
+  .nav button svg { width:18px; height:18px; flex:none; }
+  .nav button:hover { background:var(--surface-2); color:var(--ink); }
+  .nav button.on { background:var(--accent-soft); color:var(--accent); }
+  :root[data-theme="dark"] .nav button.on, :root:not([data-theme="light"]) .nav button.on { color:var(--ink); }
+  .side .foot { margin-top:auto; font-size:11.5px; color:var(--ink-3); padding:0 10px; }
+  .side .foot button { background:none; border:0; color:var(--ink-3); cursor:pointer; padding:4px 0; text-decoration:underline; text-underline-offset:2px; }
+
+  .main { padding:26px 30px 90px; min-width:0; }
+  .head { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:20px; flex-wrap:wrap; }
+  .head h1 { font-size:26px; }
+  .head .sub { color:var(--ink-2); font-size:13px; margin-top:3px; }
+
+  /* ---------- primitives ---------- */
+  .btn {
+    display:inline-flex; align-items:center; gap:7px; border:1px solid var(--line); background:var(--surface);
+    color:var(--ink); padding:8px 13px; border-radius:9px; cursor:pointer; font-weight:500; box-shadow:var(--shadow);
+  }
+  .btn:hover { border-color:var(--ink-3); }
+  .btn.primary { background:var(--accent); color:var(--accent-ink); border-color:transparent; }
+  .btn.primary:hover { filter:brightness(1.06); }
+  .btn.ghost { box-shadow:none; background:none; }
+  .btn.sm { padding:5px 9px; font-size:13px; border-radius:8px; }
+  .btn.danger { color:var(--bad); border-color:var(--bad-soft); }
+  .btn svg { width:16px; height:16px; }
+  .btn:disabled { opacity:.5; cursor:not-allowed; }
+
+  .card { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); }
+  .card.pad { padding:18px; }
+  .card h2 { font-size:16px; }
+  .card h3 { font-size:14px; }
+
+  input[type=text], input[type=number], input[type=date], select, textarea {
+    background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:8px 10px; width:100%;
+  }
+  input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible, .nav button:focus-visible {
+    outline:2px solid var(--accent); outline-offset:2px;
+  }
+  input[type=number] { text-align:right; font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; }
+  label.fld { display:block; }
+  label.fld > span { display:block; font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); margin-bottom:4px; }
+
+  .pill {
+    display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:500; padding:3px 8px; border-radius:999px;
+    background:var(--surface-2); color:var(--ink-2); letter-spacing:.02em;
+  }
+  .pill.dot::before { content:""; width:7px; height:7px; border-radius:50%; background:currentColor; }
+  .pill.good { background:var(--good-soft); color:var(--good); }
+  .pill.warn { background:var(--warn-soft); color:var(--warn); }
+  .pill.bad  { background:var(--bad-soft); color:var(--bad); }
+  .pill.ex { background:repeating-linear-gradient(45deg,var(--surface-2),var(--surface-2) 6px,transparent 6px,transparent 12px); color:var(--ink-3); border:1px dashed var(--line); }
+
+  .muted { color:var(--ink-2); }
+  .tiny { font-size:12px; }
+  .right { text-align:right; }
+  .row { display:flex; gap:10px; align-items:center; }
+  .wrap { flex-wrap:wrap; }
+  .grow { flex:1; min-width:0; }
+  .sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+
+  /* ---------- stat tiles ---------- */
+  .tiles { display:grid; grid-template-columns:repeat(auto-fit, minmax(158px,1fr)); gap:12px; }
+  .tile { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:13px 14px; }
+  .tile .k { font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); }
+  .tile .v { font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; font-size:21px; margin-top:3px; letter-spacing:-.01em; }
+  .tile .m { font-size:12px; color:var(--ink-2); margin-top:2px; }
+  .tile.hi { background:var(--accent-soft); border-color:transparent; }
+  .tile.hi .v { color:var(--accent); }
+  :root[data-theme="dark"] .tile.hi .v, :root:not([data-theme="light"]) .tile.hi .v { color:var(--ink); }
+
+  /* ---------- tables ---------- */
+  .tblwrap { overflow-x:auto; }
+  table.t { width:100%; border-collapse:collapse; font-size:13.5px; }
+  table.t th, table.t td { padding:9px 12px; text-align:left; border-bottom:1px solid var(--line-2); white-space:nowrap; }
+  table.t th { font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--ink-3); font-weight:600; }
+  table.t td.n, table.t th.n { text-align:right; font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; }
+  table.t tr:last-child td { border-bottom:0; }
+  table.t tbody tr:hover td { background:var(--inset); }
+  table.t tr.tot td { border-top:2px solid var(--line); font-weight:600; background:var(--inset); }
+
+  .plList { display:flex; flex-direction:column; }
+  .plRow { display:flex; justify-content:space-between; align-items:baseline; gap:16px; padding:10px 0; border-bottom:1px solid var(--line-2); }
+  .plRow:last-child { border-bottom:0; }
+  .plRow .lbl { color:var(--ink-2); }
+  .plRow .val { font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; font-size:15px; }
+  .plRow.big .lbl { color:var(--ink); font-weight:600; }
+  .plRow.big .val { font-size:19px; }
+  .plRow.sub .lbl { padding-left:14px; font-size:12.5px; color:var(--ink-3); }
+  .plRow.sub .val { font-size:13px; color:var(--ink-2); }
+
+  /* ---------- trip cards ---------- */
+  .trip { border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  .trip > summary { list-style:none; cursor:pointer; padding:13px 15px; display:flex; align-items:center; gap:12px; }
+  .trip > summary::-webkit-details-marker { display:none; }
+  .trip[open] > summary { border-bottom:1px solid var(--line-2); background:var(--inset); }
+  .trip .cartTag { font-weight:600; font-family:"Fraunces",serif; }
+  .trip .body { padding:14px 15px 16px; display:grid; gap:14px; }
+
+  .prod { display:grid; grid-template-columns:minmax(120px,1.1fr) repeat(4, minmax(64px,1fr)); gap:10px 12px; align-items:end; }
+  .prod .ph { font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); }
+  .prod .pname { display:flex; align-items:center; gap:8px; font-weight:500; }
+  .prod .pname::before { content:""; width:9px; height:9px; border-radius:3px; background:var(--pc,var(--p-other)); flex:none; }
+  .prod .cell { display:flex; align-items:baseline; gap:5px; justify-content:flex-end; }
+  .prod .cell .u { font-size:11px; color:var(--ink-3); }
+  .prod .val { font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; }
+  .prod .pair { display:flex; gap:5px; }
+  .prod .pair input { width:100%; padding:7px 8px; }
+
+  .exp { display:flex; flex-direction:column; gap:8px; }
+  .exp .er { display:grid; grid-template-columns:1fr 130px auto; gap:8px; }
+
+  /* dialog */
+  dialog { border:1px solid var(--line); border-radius:16px; padding:0; background:var(--surface); color:var(--ink); box-shadow:0 20px 60px -20px rgba(0,0,0,.4); max-width:560px; width:calc(100vw - 32px); }
+  dialog::backdrop { background:rgba(20,16,10,.42); backdrop-filter:blur(2px); }
+  .dlg-h { padding:16px 18px; border-bottom:1px solid var(--line-2); display:flex; align-items:center; justify-content:space-between; }
+  .dlg-b { padding:18px; display:grid; gap:14px; max-height:70vh; overflow:auto; }
+  .dlg-f { padding:14px 18px; border-top:1px solid var(--line-2); display:flex; justify-content:flex-end; gap:9px; }
+  .g2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+  .segbar { display:inline-flex; border:1px solid var(--line); border-radius:9px; overflow:hidden; background:var(--surface); }
+  .segbar button { border:0; background:none; padding:7px 12px; cursor:pointer; color:var(--ink-2); font-weight:500; }
+  .segbar button.on { background:var(--accent-soft); color:var(--accent); }
+  :root[data-theme="dark"] .segbar button.on, :root:not([data-theme="light"]) .segbar button.on { color:var(--ink); }
+
+  .chart { width:100%; height:auto; display:block; }
+  .chart text { font-family:"IBM Plex Mono",monospace; fill:var(--ink-3); }
+  .chart .bar { fill:var(--accent); }
+  .chart .bar:hover { fill:var(--ink); }
+  .chart .grid { stroke:var(--line-2); }
+  .chart .axis { stroke:var(--line); }
+
+  .empty { text-align:center; padding:34px 20px; color:var(--ink-2); }
+  .empty h3 { color:var(--ink); margin-bottom:6px; }
+
+  .toast {
+    position:fixed; left:50%; bottom:20px; transform:translateX(-50%); z-index:50;
+    background:var(--ink); color:var(--paper); padding:9px 15px; border-radius:999px; font-size:13px; box-shadow:var(--shadow);
+  }
+
+  /* ---------- mobile ---------- */
+  @media (max-width:860px) {
+    .app { grid-template-columns:1fr; }
+    .side {
+      position:fixed; bottom:0; left:0; right:0; top:auto; height:auto; width:100%;
+      flex-direction:row; align-items:center; gap:2px; border-right:0; border-top:1px solid var(--line);
+      background:var(--surface); padding:6px 6px calc(6px + env(safe-area-inset-bottom)); z-index:30;
+    }
+    .brand, .side .foot { display:none; }
+    .nav { flex-direction:row; width:100%; justify-content:space-around; gap:0; }
+    .nav button { flex-direction:column; gap:3px; font-size:10.5px; padding:6px 4px; border-radius:8px; }
+    .nav button svg { width:20px; height:20px; }
+    .main { padding:18px 16px 96px; }
+    .head h1 { font-size:22px; }
+    .prod { grid-template-columns:1fr 1fr; }
+    .prod .pname { grid-column:1 / -1; }
+    .g2 { grid-template-columns:1fr; }
+  }
+  @media (prefers-reduced-motion:reduce) { * { transition:none !important; animation:none !important; } }
+</style>
+
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <div class="mark">K</div>
+      <div><b>KRP</b><span>Bread Ledger</span></div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="foot">
+      <div id="storeState">Loading…</div>
+      <button id="themeBtn" type="button">Toggle theme</button>
+    </div>
+  </aside>
+  <main class="main" id="view"><div class="empty"><h3>Loading your ledger…</h3></div></main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ============================ constants ============================ */
+  var DEFAULT_SETTINGS = {
+    commissionRate: 0.15,
+    products: [
+      { key: "malunggay", name: "Malunggay Pandesal", price: 5, perTray: 24 },
+      { key: "ube",       name: "Ube Pandesal",       price: 6, perTray: 20 },
+      { key: "spanish",   name: "Spanish Bread",      price: 6, perTray: 16 }
+    ],
+    carts: [ { id: "1", name: "Cart 1" }, { id: "2", name: "Cart 2" } ],
+    supplyCategories: ["Food", "Packaging", "Misc"]
+  };
+  var SUPPLIER_HINTS = ["Marvin", "Caloocan", "Malolos"];
+  var ITEM_HINTS = ["Harina King", "Asukal Bais 50kls", "Lard", "Margarine Drum", "Angel Yeast 500g",
+    "Cheese Jersey 2kg", "Supot #5", "Supot 3", "Plastic Mini", "Plastic Tiny", "Vanilla",
+    "Palm Oil", "Delivery Fee", "Lalamove fee"];
+  var UOM_HINTS = ["sack", "kilogram", "bundle", "each", "drum", "gallon", "container", "box"];
+  var PCLASS = { malunggay: "var(--p-malunggay)", ube: "var(--p-ube)", spanish: "var(--p-spanish)" };
+
+  var NAV = [
+    { id: "dashboard", label: "Overview", icon: "M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10" },
+    { id: "routes",    label: "Routes",   icon: "M3 7h11v9H3zM14 10h4l3 3v3h-7zM7.5 19a1.7 1.7 0 100-3.4 1.7 1.7 0 000 3.4zM17.5 19a1.7 1.7 0 100-3.4 1.7 1.7 0 000 3.4z" },
+    { id: "supplies",  label: "Supplies", icon: "M3 8l9-4 9 4-9 4-9-4zM3 8v8l9 4 9-4V8M12 12v8" },
+    { id: "reports",   label: "Reports",  icon: "M4 20V4M4 20h16M8 16V9M13 16V6M18 16v-4" },
+    { id: "settings",  label: "Settings", icon: "M12 15a3 3 0 100-6 3 3 0 000 6zM19 12a7 7 0 00-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 00-2-1.2l-.4-2.6H10.9l-.4 2.6a7 7 0 00-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 005 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 002 1.2l.4 2.6h2.2l.4-2.6a7 7 0 002-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z" }
+  ];
+
+  /* ============================ helpers ============================ */
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  function h(html) { var t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstElementChild; }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]; }); }
+  function num(v) { var n = parseFloat(v); return isFinite(n) ? n : 0; }
+  var pf = new Intl.NumberFormat("en-PH", { maximumFractionDigits: 2 });
+  var pf0 = new Intl.NumberFormat("en-PH", { maximumFractionDigits: 0 });
+  function peso(n) { n = num(n); return (n < 0 ? "-₱" : "₱") + pf.format(Math.abs(n)); }
+  function peso0(n) { n = num(n); return (n < 0 ? "-₱" : "₱") + pf0.format(Math.abs(Math.round(n))); }
+  function intc(n) { return pf0.format(Math.round(num(n))); }
+  function pct(n) { return (num(n) * 100).toFixed(1) + "%"; }
+  function todayISO() { var d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+  function monthOf(iso) { return iso.slice(0, 7); }
+  function monthStart(m) { return m + "-01"; }
+  function monthEnd(m) { var y = +m.slice(0, 4), mo = +m.slice(5, 7); return m + "-" + String(new Date(y, mo, 0).getDate()).padStart(2, "0"); }
+  function addMonths(m, delta) { var y = +m.slice(0, 4), mo = +m.slice(5, 7) - 1 + delta; y += Math.floor(mo / 12); mo = ((mo % 12) + 12) % 12; return y + "-" + String(mo + 1).padStart(2, "0"); }
+  function fmtDate(iso, opt) { try { return new Date(iso + "T00:00:00").toLocaleDateString("en-PH", opt || { weekday: "short", month: "short", day: "numeric" }); } catch (e) { return iso; } }
+  function fmtMonth(m) { try { return new Date(m + "-01T00:00:00").toLocaleDateString("en-PH", { month: "long", year: "numeric" }); } catch (e) { return m; } }
+  function uid() { return (crypto && crypto.randomUUID) ? crypto.randomUUID() : "id" + Date.now() + Math.random().toString(36).slice(2); }
+  function debounce(fn, ms) { var t; return function () { var a = arguments, c = this; clearTimeout(t); t = setTimeout(function () { fn.apply(c, a); }, ms); }; }
+  function pcolor(key) { return PCLASS[key] || "var(--p-other)"; }
+
+  function toast(msg) {
+    var old = $(".toast"); if (old) old.remove();
+    var t = h('<div class="toast">' + esc(msg) + "</div>");
+    document.body.appendChild(t);
+    setTimeout(function () { t.remove(); }, 2200);
+  }
+
+  /* ============================ storage ============================ */
+  // Unified async store: db capability when present, else localStorage.
+  var store = null;
+
+  function localStore() {
+    var P = "krp:";
+    function get(path) { try { var v = localStorage.getItem(P + path); return v ? JSON.parse(v) : null; } catch (e) { return null; } }
+    function set(path, obj) { try { localStorage.setItem(P + path, JSON.stringify(obj)); } catch (e) {} return Promise.resolve(); }
+    return {
+      kind: "local",
+      getDoc: function (path) { return Promise.resolve(get(path)); },
+      setDoc: function (path, obj) { return set(path, obj); },
+      queryDays: function (start, end) {
+        var out = [];
+        for (var i = 0; i < localStorage.length; i++) {
+          var k = localStorage.key(i);
+          if (k.indexOf(P + "days/") === 0) {
+            var d = k.slice((P + "days/").length);
+            if (d >= start && d <= end) { var v = get("days/" + d); if (v) out.push(v); }
+          }
+        }
+        out.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+        return Promise.resolve(out);
+      }
+    };
+  }
+
+  function dbStore(db) {
+    return {
+      kind: "db",
+      getDoc: function (path) {
+        return db.doc(path).get().then(function (s) { return s.exists ? s.data() : null; }).catch(function () { return null; });
+      },
+      setDoc: function (path, obj) { return db.doc(path).set(obj); },
+      queryDays: function (start, end) {
+        return db.collection("days").where("date", ">=", start).where("date", "<=", end).orderBy("date").get()
+          .then(function (q) { return q.docs.map(function (d) { return d.data(); }); })
+          .catch(function () { return []; });
+      }
+    };
+  }
+
+  function initStore() {
+    if (!(window.claude && typeof window.claude.use === "function")) return Promise.resolve(localStore());
+    return window.claude.use("db").then(function (db) {
+      return db ? dbStore(db) : localStore();
+    }).catch(function () { return localStore(); });
+  }
+
+  var downloadsCap = null; // resolved lazily
+
+  /* ============================ app state ============================ */
+  var S = {
+    settings: null,
+    view: "dashboard",
+    month: monthOf(todayISO()),   // Overview + Routes month context
+    day: todayISO(),              // selected day in Routes
+    reportMonth: monthOf(todayISO()),
+    reportRange: 1,               // months back for report (1 = just this month)
+    days: {},                     // iso -> day doc  (current working window)
+    supplies: {},                 // 'YYYY-MM' -> supplies doc
+    hasAnyData: false,
+    quickEx: null                 // transient quick-add example dismissed flag
+  };
+
+  function P() { return S.settings.products; }
+  function prod(key) { for (var i = 0; i < S.settings.products.length; i++) if (S.settings.products[i].key === key) return S.settings.products[i]; return { key: key, name: key, price: 0, perTray: 1 }; }
+
+  /* ---------- computation ---------- */
+  function computeLine(line, product) {
+    var loaded = num(line.loaded), leftover = num(line.leftover);
+    var sold = loaded - leftover;
+    var price = line.price != null ? num(line.price) : num(product.price);
+    return { loaded: loaded, leftover: leftover, sold: sold, price: price, revenue: sold * price, negative: sold < 0 };
+  }
+  function computeTrip(trip, settings) {
+    var lines = {}, gross = 0, pieces = 0, byProd = {};
+    settings.products.forEach(function (p) {
+      var raw = (trip.lines && trip.lines[p.key]) || {};
+      var c = computeLine(raw, p);
+      lines[p.key] = c; gross += c.revenue; pieces += Math.max(0, c.sold);
+      byProd[p.key] = { sold: c.sold, revenue: c.revenue };
+    });
+    var rate = trip.commissionRate != null ? num(trip.commissionRate) : num(settings.commissionRate);
+    var commission = gross * rate;
+    var net = gross - commission;
+    var expenses = (trip.expenses || []).reduce(function (s, e) { return s + num(e.amount); }, 0);
+    var profit = net - expenses;
+    return { lines: lines, byProd: byProd, gross: gross, rate: rate, commission: commission, net: net,
+      expenses: expenses, profit: profit, pieces: pieces, hasNeg: settings.products.some(function (p) { return lines[p.key].negative; }) };
+  }
+  function computeDay(day, settings) {
+    var trips = (day && day.trips) || [];
+    var acc = { gross: 0, commission: 0, net: 0, expenses: 0, profit: 0, pieces: 0, trips: trips.length, byCart: {}, byProd: {} };
+    settings.products.forEach(function (p) { acc.byProd[p.key] = { sold: 0, revenue: 0 }; });
+    trips.forEach(function (t) {
+      var c = computeTrip(t, settings);
+      acc.gross += c.gross; acc.commission += c.commission; acc.net += c.net;
+      acc.expenses += c.expenses; acc.profit += c.profit; acc.pieces += c.pieces;
+      acc.byCart[t.cart] = (acc.byCart[t.cart] || 0) + c.profit;
+      settings.products.forEach(function (p) { acc.byProd[p.key].sold += c.byProd[p.key].sold; acc.byProd[p.key].revenue += c.byProd[p.key].revenue; });
+    });
+    return acc;
+  }
+  function computeRange(daysArr, suppliesArr, settings) {
+    var acc = { gross: 0, commission: 0, net: 0, tripExpenses: 0, routeProfit: 0, pieces: 0,
+      byProd: {}, byCart: {}, days: 0, trips: 0, supplyTotal: 0, supplyByCat: {} };
+    settings.products.forEach(function (p) { acc.byProd[p.key] = { sold: 0, revenue: 0 }; });
+    daysArr.forEach(function (d) {
+      var c = computeDay(d, settings);
+      if (c.trips) acc.days++;
+      acc.trips += c.trips;
+      acc.gross += c.gross; acc.commission += c.commission; acc.net += c.net;
+      acc.tripExpenses += c.expenses; acc.routeProfit += c.profit; acc.pieces += c.pieces;
+      Object.keys(c.byCart).forEach(function (k) { acc.byCart[k] = (acc.byCart[k] || 0) + c.byCart[k]; });
+      settings.products.forEach(function (p) { acc.byProd[p.key].sold += c.byProd[p.key].sold; acc.byProd[p.key].revenue += c.byProd[p.key].revenue; });
+    });
+    (suppliesArr || []).forEach(function (m) {
+      (m.items || []).forEach(function (it) {
+        var t = num(it.qty) * num(it.amount);
+        acc.supplyTotal += t;
+        acc.supplyByCat[it.category || "Misc"] = (acc.supplyByCat[it.category || "Misc"] || 0) + t;
+      });
+    });
+    acc.netProfit = acc.routeProfit - acc.supplyTotal;
+    acc.margin = acc.gross ? acc.netProfit / acc.gross : 0;
+    return acc;
+  }
+
+  /* ---------- data loading ---------- */
+  function loadSettings() {
+    return store.getDoc("settings/config").then(function (cfg) {
+      if (cfg && cfg.products && cfg.products.length) { S.settings = normSettings(cfg); return; }
+      S.settings = normSettings(DEFAULT_SETTINGS);
+      return store.setDoc("settings/config", S.settings);
+    });
+  }
+  function normSettings(c) {
+    var s = JSON.parse(JSON.stringify(c));
+    s.commissionRate = num(s.commissionRate) || 0.15;
+    s.products = (s.products || []).map(function (p) {
+      return { key: p.key || (p.name || "item").toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 24) || uid().slice(0, 6),
+        name: p.name || "Bread", price: num(p.price), perTray: Math.max(1, num(p.perTray) || 1) };
+    });
+    if (!s.products.length) s.products = JSON.parse(JSON.stringify(DEFAULT_SETTINGS.products));
+    s.carts = (s.carts || []).map(function (c2, i) { return { id: String(c2.id || (i + 1)), name: c2.name || ("Cart " + (i + 1)) }; });
+    if (!s.carts.length) s.carts = [{ id: "1", name: "Cart 1" }];
+    s.supplyCategories = s.supplyCategories && s.supplyCategories.length ? s.supplyCategories : DEFAULT_SETTINGS.supplyCategories.slice();
+    return s;
+  }
+  function saveSettings() { return store.setDoc("settings/config", S.settings); }
+
+  function loadWindow() {
+    // load days for month context (± enough for Routes browsing) and supplies for month
+    var start = monthStart(S.month), end = monthEnd(S.month);
+    return Promise.all([
+      store.queryDays(start, end),
+      store.getDoc("supplies/" + S.month)
+    ]).then(function (r) {
+      S.days = {};
+      r[0].forEach(function (d) { S.days[d.date] = d; });
+      S.supplies = {}; if (r[1]) S.supplies[S.month] = r[1];
+      if (r[0].some(function (d) { return (d.trips || []).length; })) S.hasAnyData = true;
+      // ensure selected day exists in cache slot
+    });
+  }
+  function getDay(iso) { return S.days[iso] || { date: iso, trips: [] }; }
+  function saveDay(iso, dayObj) {
+    dayObj.date = iso;
+    S.days[iso] = dayObj;
+    if ((dayObj.trips || []).length) S.hasAnyData = true;
+    return store.setDoc("days/" + iso, dayObj).then(function () { toast("Saved"); });
+  }
+  function getSupplies(m) { return S.supplies[m] || { month: m, items: [] }; }
+  function saveSupplies(m, obj) { obj.month = m; S.supplies[m] = obj; return store.setDoc("supplies/" + m, obj).then(function () { toast("Saved"); }); }
+
+  /* ============================ rendering ============================ */
+  function setView(v) { S.view = v; syncNav(); render(); window.scrollTo(0, 0); }
+  function syncNav() {
+    var nav = $("#nav"); nav.innerHTML = "";
+    NAV.forEach(function (n) {
+      var b = h('<button type="button" class="' + (S.view === n.id ? "on" : "") + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="' + n.icon + '"/></svg><span>' + n.label + "</span></button>");
+      b.addEventListener("click", function () { setView(n.id); });
+      nav.appendChild(b);
+    });
+  }
+
+  function render() {
+    var mount = $("#view");
+    mount.innerHTML = "";
+    var fn = ({ dashboard: viewDashboard, routes: viewRoutes, supplies: viewSupplies, reports: viewReports, settings: viewSettings })[S.view] || viewDashboard;
+    mount.appendChild(fn());
+  }
+
+  function headBar(title, sub, actions) {
+    var el = h('<div class="head"></div>');
+    var left = h("<div><h1>" + esc(title) + "</h1>" + (sub ? '<div class="sub">' + esc(sub) + "</div>" : "") + "</div>");
+    el.appendChild(left);
+    if (actions) { var a = h('<div class="row wrap"></div>'); actions.forEach(function (x) { a.appendChild(x); }); el.appendChild(a); }
+    return el;
+  }
+  function monthNav(cur, onChange) {
+    var el = h('<div class="segbar" role="group" aria-label="Month"></div>');
+    var prev = h('<button type="button" aria-label="Previous month">‹</button>');
+    var lbl = h('<button type="button" style="min-width:150px" class="on">' + esc(fmtMonth(cur)) + "</button>");
+    var next = h('<button type="button" aria-label="Next month">›</button>');
+    prev.addEventListener("click", function () { onChange(addMonths(cur, -1)); });
+    next.addEventListener("click", function () { onChange(addMonths(cur, 1)); });
+    lbl.addEventListener("click", function () { onChange(monthOf(todayISO())); });
+    el.appendChild(prev); el.appendChild(lbl); el.appendChild(next);
+    return el;
+  }
+
+  /* ---------------- Overview ---------------- */
+  function viewDashboard() {
+    var frag = document.createDocumentFragment();
+    var daysArr = Object.keys(S.days).map(function (k) { return S.days[k]; });
+    var sup = S.supplies[S.month] ? [S.supplies[S.month]] : [];
+    var r = computeRange(daysArr, sup, S.settings);
+    var td = computeDay(getDay(todayISO()), S.settings);
+
+    frag.appendChild(headBar("Overview", fmtMonth(S.month) + " · " + (r.trips) + " route" + (r.trips === 1 ? "" : "s") + " logged",
+      [ monthNav(S.month, function (m) { S.month = m; loadWindow().then(render); }),
+        mkBtn("Add route", "primary", function () { openTripDialog(todayISO(), null, null); }) ]));
+
+    // tiles
+    var tiles = h('<section class="tiles" style="margin-bottom:16px"></section>');
+    [
+      ["Gross sales", peso0(r.gross), intc(r.pieces) + " pcs sold", false],
+      ["Seller’s 15%", peso0(r.commission), "commission paid", false],
+      ["Net of seller", peso0(r.net), "after commission", false],
+      ["Route expenses", peso0(r.tripExpenses), "gas, load, snacks", false],
+      ["Supply purchases", peso0(r.supplyTotal), "ingredients & packaging", false],
+      ["Net profit", peso0(r.netProfit), "margin " + pct(r.margin), true]
+    ].forEach(function (t) {
+      tiles.appendChild(h('<div class="tile ' + (t[3] ? "hi" : "") + '"><div class="k">' + esc(t[0]) + '</div><div class="v">' + esc(t[1]) + '</div><div class="m">' + esc(t[2]) + "</div></div>"));
+    });
+    frag.appendChild(tiles);
+
+    var grid = h('<div style="display:grid; grid-template-columns:minmax(0,1.4fr) minmax(0,1fr); gap:16px; align-items:start"></div>');
+    if (window.matchMedia("(max-width:860px)").matches) grid.style.gridTemplateColumns = "1fr";
+
+    // left: today + chart
+    var left = h("<div style='display:grid; gap:16px'></div>");
+
+    var todayCard = h('<section class="card pad"></section>');
+    todayCard.appendChild(h('<div class="row" style="justify-content:space-between; margin-bottom:12px"><h2>Today — ' + esc(fmtDate(todayISO(), { weekday: "long", month: "short", day: "numeric" })) + "</h2></div>"));
+    var tday = getDay(todayISO());
+    if (!(tday.trips || []).length) {
+      var qd = quickAddCard();
+      todayCard.appendChild(qd);
+    } else {
+      var tt = h('<div style="display:grid; gap:9px"></div>');
+      tday.trips.forEach(function (trip) {
+        var c = computeTrip(trip, S.settings);
+        var cart = cartName(trip.cart);
+        var rowb = h('<button class="btn ghost" style="width:100%; justify-content:space-between; border:1px solid var(--line)"></button>');
+        rowb.appendChild(h('<span class="row" style="gap:9px"><b class="mono">' + esc(cart) + '</b><span class="muted tiny">Route ' + esc(trip.trip || 1) + "</span>" + (c.hasNeg ? '<span class="pill bad">check counts</span>' : "") + "</span>"));
+        rowb.appendChild(h('<span class="num">' + peso0(c.profit) + "</span>"));
+        rowb.addEventListener("click", function () { openTripDialog(todayISO(), trip.cart, trip); });
+        tt.appendChild(rowb);
+      });
+      tt.appendChild(h('<div class="row" style="justify-content:space-between; padding:6px 2px 0"><span class="muted tiny">Today’s profit</span><b class="num">' + peso0(td.profit) + "</b></div>"));
+      todayCard.appendChild(tt);
+      var add = mkBtn("Add another route today", "", function () { openTripDialog(todayISO(), null, null); });
+      add.classList.add("sm"); add.style.marginTop = "12px";
+      todayCard.appendChild(add);
+    }
+    left.appendChild(todayCard);
+
+    left.appendChild(dailyChartCard(daysArr));
+    grid.appendChild(left);
+
+    // right: month breakdown
+    var right = h('<section class="card pad"></section>');
+    right.appendChild(h("<h2 style='margin-bottom:10px'>Month at a glance</h2>"));
+    var pl = h('<div class="plList"></div>');
+    S.settings.products.forEach(function (p) {
+      var bp = r.byProd[p.key] || { sold: 0, revenue: 0 };
+      pl.appendChild(h('<div class="plRow"><span class="lbl row" style="gap:8px"><i style="width:9px;height:9px;border-radius:3px;background:' + pcolor(p.key) + ';display:inline-block"></i>' + esc(p.name) + '</span><span class="val">' + intc(bp.sold) + ' pcs · ' + peso0(bp.revenue) + "</span></div>"));
+    });
+    pl.appendChild(h('<div class="plRow big"><span class="lbl">Gross sales</span><span class="val">' + peso0(r.gross) + "</span></div>"));
+    pl.appendChild(h('<div class="plRow"><span class="lbl">− Seller’s ' + pct(S.settings.commissionRate) + '</span><span class="val">' + peso0(-r.commission) + "</span></div>"));
+    pl.appendChild(h('<div class="plRow"><span class="lbl">− Route expenses</span><span class="val">' + peso0(-r.tripExpenses) + "</span></div>"));
+    pl.appendChild(h('<div class="plRow"><span class="lbl">− Supply purchases</span><span class="val">' + peso0(-r.supplyTotal) + "</span></div>"));
+    pl.appendChild(h('<div class="plRow big"><span class="lbl">Net profit</span><span class="val">' + peso0(r.netProfit) + "</span></div>"));
+    right.appendChild(pl);
+    Object.keys(r.byCart).length && right.appendChild(cartSplit(r.byCart));
+    grid.appendChild(right);
+
+    frag.appendChild(grid);
+    return frag;
+  }
+
+  function cartSplit(byCart) {
+    var el = h('<div style="margin-top:14px; padding-top:12px; border-top:1px solid var(--line-2)"></div>');
+    el.appendChild(h('<div class="tiny muted" style="margin-bottom:6px">Route profit by cart</div>'));
+    Object.keys(byCart).sort().forEach(function (k) {
+      el.appendChild(h('<div class="plRow" style="padding:6px 0"><span class="lbl">' + esc(cartName(k)) + '</span><span class="val">' + peso0(byCart[k]) + "</span></div>"));
+    });
+    return el;
+  }
+
+  function quickAddCard() {
+    var wrap = h('<div class="card pad" style="background:var(--inset); box-shadow:none"></div>');
+    wrap.appendChild(h('<div class="row" style="justify-content:space-between; margin-bottom:10px"><b>Log the first route</b><span class="pill ex">example counts</span></div>'));
+    wrap.appendChild(h('<p class="tiny muted" style="margin:0 0 12px">The numbers below are a demo. Type your real loaded &amp; leftover counts, then save.</p>'));
+    var demo = { cart: (S.settings.carts[0] || {}).id || "1", trip: 1, lines: {}, expenses: [{ label: "Gas + load", amount: 250 }] };
+    var ex = { malunggay: [720, 40], ube: [120, 12], spanish: [96, 8] };
+    S.settings.products.forEach(function (p, i) {
+      var e = ex[p.key] || [Math.round(240 - i * 20), Math.round(20 - i * 4)];
+      demo.lines[p.key] = { loaded: e[0], leftover: Math.max(0, e[1]) };
+    });
+    var b = mkBtn("Open route form", "primary", function () { openTripDialog(todayISO(), demo.cart, demo, true); });
+    wrap.appendChild(b);
+    return wrap;
+  }
+
+  function dailyChartCard(daysArr) {
+    var card = h('<section class="card pad"></section>');
+    card.appendChild(h("<h2 style='margin-bottom:4px'>Daily gross — " + esc(fmtMonth(S.month)) + "</h2>"));
+    var end = +monthEnd(S.month).slice(8);
+    var vals = [];
+    for (var d = 1; d <= end; d++) {
+      var iso = S.month + "-" + String(d).padStart(2, "0");
+      var day = S.days[iso];
+      vals.push({ d: d, iso: iso, v: day ? computeDay(day, S.settings).gross : 0 });
+    }
+    var max = Math.max.apply(null, vals.map(function (x) { return x.v; }).concat([1]));
+    if (!vals.some(function (x) { return x.v; })) {
+      card.appendChild(h('<div class="empty" style="padding:22px"><span class="muted tiny">No sales recorded this month yet.</span></div>'));
+      return card;
+    }
+    var W = 640, H = 190, padL = 46, padB = 22, padT = 10, padR = 8;
+    var iw = W - padL - padR, ih = H - padT - padB;
+    var bw = iw / vals.length;
+    var svg = ['<svg class="chart" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Daily gross sales bar chart">'];
+    // gridlines + y labels (0, mid, max)
+    [0, 0.5, 1].forEach(function (f) {
+      var y = padT + ih - f * ih;
+      svg.push('<line class="grid" x1="' + padL + '" y1="' + y.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + y.toFixed(1) + '"/>');
+      svg.push('<text x="' + (padL - 6) + '" y="' + (y + 3).toFixed(1) + '" text-anchor="end" font-size="9">' + peso0(f * max) + "</text>");
+    });
+    svg.push('<line class="axis" x1="' + padL + '" y1="' + (padT + ih) + '" x2="' + (W - padR) + '" y2="' + (padT + ih) + '"/>');
+    vals.forEach(function (x) {
+      var bh = x.v > 0 ? Math.max(1.5, (x.v / max) * ih) : 0;
+      var bx = padL + x.d * bw - bw + bw * 0.16;
+      var by = padT + ih - bh;
+      if (bh) svg.push('<rect class="bar" x="' + bx.toFixed(1) + '" y="' + by.toFixed(1) + '" width="' + (bw * 0.68).toFixed(1) + '" height="' + bh.toFixed(1) + '" rx="1.5"><title>' + esc(fmtDate(x.iso)) + " — " + peso0(x.v) + "</title></rect>");
+      if (x.d % 5 === 0 || x.d === 1) svg.push('<text x="' + (padL + x.d * bw - bw / 2).toFixed(1) + '" y="' + (H - 6) + '" text-anchor="middle" font-size="9">' + x.d + "</text>");
+    });
+    svg.push("</svg>");
+    card.appendChild(h(svg.join("")));
+    return card;
+  }
+
+  /* ---------------- Routes ---------------- */
+  function viewRoutes() {
+    var frag = document.createDocumentFragment();
+    frag.appendChild(headBar("Routes", "Count in, count leftovers, log expenses",
+      [ mkBtn("Add route", "primary", function () { openTripDialog(S.day, null, null); }) ]));
+
+    var picker = h('<section class="card pad" style="margin-bottom:16px; display:flex; gap:14px; align-items:end; flex-wrap:wrap"></section>');
+    var dl = h('<label class="fld"><span>Date</span></label>');
+    var di = h('<input type="date" value="' + esc(S.day) + '" style="width:190px">');
+    di.addEventListener("change", function () {
+      S.day = di.value || S.day;
+      if (monthOf(S.day) !== S.month) { S.month = monthOf(S.day); loadWindow().then(render); }
+      else render();
+    });
+    dl.appendChild(di); picker.appendChild(dl);
+    picker.appendChild(h('<div class="grow"></div>'));
+    var jump = h('<div class="row wrap"></div>');
+    jump.appendChild(mkBtn("‹ Prev day", "sm", function () { shiftDay(-1); }));
+    jump.appendChild(mkBtn("Today", "sm", function () { S.day = todayISO(); if (monthOf(S.day) !== S.month) { S.month = monthOf(S.day); loadWindow().then(render); } else render(); }));
+    jump.appendChild(mkBtn("Next day ›", "sm", function () { shiftDay(1); }));
+    picker.appendChild(jump);
+    frag.appendChild(picker);
+
+    var day = getDay(S.day);
+    var dc = computeDay(day, S.settings);
+
+    if (!(day.trips || []).length) {
+      var e = h('<section class="card"><div class="empty"><h3>No routes for ' + esc(fmtDate(S.day)) + "</h3><p>Add a cart run to record what went out and what came back.</p></div></section>");
+      e.querySelector(".empty").appendChild(mkBtn("Add route", "primary", function () { openTripDialog(S.day, null, null); }));
+      frag.appendChild(e);
+      return frag;
+    }
+
+    var list = h('<div style="display:grid; gap:12px"></div>');
+    day.trips.slice().sort(function (a, b) { return String(a.cart).localeCompare(String(b.cart)) || (a.trip || 0) - (b.trip || 0); })
+      .forEach(function (trip) { list.appendChild(tripCard(S.day, trip)); });
+    frag.appendChild(list);
+
+    var sum = h('<section class="card pad" style="margin-top:14px"></section>');
+    sum.appendChild(h('<div class="row" style="justify-content:space-between"><h3>' + esc(fmtDate(S.day, { weekday: "long", month: "long", day: "numeric" })) + " total</h3></div>"));
+    var pl = h('<div class="plList" style="margin-top:8px"></div>');
+    pl.appendChild(plr("Gross sales", peso(dc.gross)));
+    pl.appendChild(plr("Seller’s share", peso(-dc.commission)));
+    pl.appendChild(plr("Route expenses", peso(-dc.expenses)));
+    pl.appendChild(plr("Route profit", peso(dc.profit), true));
+    sum.appendChild(pl);
+    frag.appendChild(sum);
+    return frag;
+  }
+  function plr(l, v, big) { return h('<div class="plRow ' + (big ? "big" : "") + '"><span class="lbl">' + esc(l) + '</span><span class="val">' + esc(v) + "</span></div>"); }
+
+  function shiftDay(delta) {
+    var d = new Date(S.day + "T00:00:00"); d.setDate(d.getDate() + delta);
+    S.day = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    if (monthOf(S.day) !== S.month) { S.month = monthOf(S.day); loadWindow().then(render); } else render();
+  }
+
+  function cartName(id) { for (var i = 0; i < S.settings.carts.length; i++) if (S.settings.carts[i].id === String(id)) return S.settings.carts[i].name; return "Cart " + id; }
+
+  function tripCard(iso, trip) {
+    var c = computeTrip(trip, S.settings);
+    var det = h('<details class="trip"></details>');
+    var sm = h('<summary></summary>');
+    sm.appendChild(h('<span class="cartTag">' + esc(cartName(trip.cart)) + "</span>"));
+    sm.appendChild(h('<span class="pill">Route ' + esc(trip.trip || 1) + "</span>"));
+    if (c.hasNeg) sm.appendChild(h('<span class="pill bad dot">leftover &gt; loaded</span>'));
+    sm.appendChild(h('<span class="grow"></span>'));
+    sm.appendChild(h('<span class="muted tiny">' + intc(c.pieces) + " pcs · " + peso0(c.gross) + "</span>"));
+    sm.appendChild(h('<b class="num" style="min-width:92px; text-align:right">' + peso0(c.profit) + "</b>"));
+    det.appendChild(sm);
+
+    var body = h('<div class="body"></div>');
+    var tbl = h('<div class="tblwrap"><table class="t"><thead><tr><th>Bread</th><th class="n">Loaded</th><th class="n">Leftover</th><th class="n">Sold</th><th class="n">Price</th><th class="n">Revenue</th></tr></thead><tbody></tbody></table></div>');
+    var tb = tbl.querySelector("tbody");
+    S.settings.products.forEach(function (p) {
+      var l = c.lines[p.key];
+      tb.appendChild(h("<tr><td><span class='row' style='gap:8px'><i style='width:9px;height:9px;border-radius:3px;background:" + pcolor(p.key) + ";display:inline-block'></i>" + esc(p.name) + "</td>" +
+        "<td class='n'>" + intc(l.loaded) + "</td><td class='n'>" + intc(l.leftover) + "</td>" +
+        "<td class='n' style='" + (l.negative ? "color:var(--bad)" : "") + "'>" + intc(l.sold) + "</td>" +
+        "<td class='n'>" + peso(l.price) + "</td><td class='n'>" + peso0(l.revenue) + "</td></tr>"));
+    });
+    tb.appendChild(h("<tr class='tot'><td>Gross</td><td class='n'></td><td class='n'></td><td class='n'>" + intc(c.pieces) + "</td><td class='n'></td><td class='n'>" + peso0(c.gross) + "</td></tr>"));
+    body.appendChild(tbl);
+
+    var pl = h('<div class="plList"></div>');
+    pl.appendChild(plr("Seller’s " + pct(c.rate), peso(-c.commission)));
+    pl.appendChild(plr("Net of seller", peso(c.net)));
+    if ((trip.expenses || []).length) {
+      trip.expenses.forEach(function (e) { pl.appendChild(h('<div class="plRow sub"><span class="lbl">' + esc(e.label || "Expense") + '</span><span class="val">' + peso(-num(e.amount)) + "</span></div>")); });
+    }
+    pl.appendChild(plr("Route expenses", peso(-c.expenses)));
+    pl.appendChild(plr("Route profit", peso(c.profit), true));
+    body.appendChild(pl);
+
+    var acts = h('<div class="row wrap" style="gap:8px"></div>');
+    acts.appendChild(mkBtn("Edit route", "sm", function () { openTripDialog(iso, trip.cart, trip); }));
+    var del = mkBtn("Delete", "sm", function () {
+      if (!confirm("Delete " + cartName(trip.cart) + " route " + (trip.trip || 1) + " on " + fmtDate(iso) + "?")) return;
+      var d = getDay(iso); d.trips = (d.trips || []).filter(function (t) { return t.id !== trip.id; });
+      saveDay(iso, d).then(render);
+    });
+    del.classList.add("danger");
+    acts.appendChild(del);
+    body.appendChild(acts);
+
+    det.appendChild(body);
+    return det;
+  }
+
+  /* ---------------- Trip dialog ---------------- */
+  function openTripDialog(iso, cartId, existing, isExample) {
+    var day = getDay(iso);
+    var editing = !!(existing && existing.id);
+    var model = {
+      id: (existing && existing.id) || uid(),
+      date: iso,
+      cart: String((existing && existing.cart) || cartId || (S.settings.carts[0] || {}).id || "1"),
+      trip: (existing && existing.trip) || nextTripNo(day, String((existing && existing.cart) || cartId || (S.settings.carts[0] || {}).id || "1")),
+      lines: {},
+      expenses: (existing && existing.expenses && existing.expenses.length) ? JSON.parse(JSON.stringify(existing.expenses)) : []
+    };
+    S.settings.products.forEach(function (p) {
+      var src = (existing && existing.lines && existing.lines[p.key]) || {};
+      model.lines[p.key] = {
+        loadedTrays: src.loadedTrays != null ? src.loadedTrays : "",
+        loadedLoose: src.loadedLoose != null ? src.loadedLoose : (src.loaded != null ? src.loaded : (isExample ? src.loaded : "")),
+        leftoverTrays: src.leftoverTrays != null ? src.leftoverTrays : "",
+        leftoverLoose: src.leftoverLoose != null ? src.leftoverLoose : (src.leftover != null ? src.leftover : "")
+      };
+      if (isExample && existing && existing.lines && existing.lines[p.key]) {
+        model.lines[p.key].loadedLoose = existing.lines[p.key].loaded;
+        model.lines[p.key].leftoverLoose = existing.lines[p.key].leftover;
+      }
+    });
+
+    var dlg = h('<dialog></dialog>');
+    dlg.innerHTML =
+      '<form method="dialog"><div class="dlg-h"><h2>' + (editing ? "Edit route" : "New route") + '</h2>' +
+      '<button class="btn ghost sm" value="cancel" type="submit" aria-label="Close">✕</button></div>' +
+      '<div class="dlg-b"></div>' +
+      '<div class="dlg-f"><button class="btn ghost" value="cancel" type="submit">Cancel</button>' +
+      '<button class="btn primary" id="tSave" type="button">' + (editing ? "Save changes" : "Save route") + "</button></div></form>";
+    var b = dlg.querySelector(".dlg-b");
+
+    // meta
+    var meta = h('<div class="g2"></div>');
+    var dfld = h('<label class="fld"><span>Date</span><input type="date" value="' + esc(model.date) + '"></label>');
+    dfld.querySelector("input").addEventListener("change", function () { model.date = this.value || model.date; });
+    var cfld = h('<label class="fld"><span>Cart</span></label>');
+    var csel = h("<select></select>");
+    S.settings.carts.forEach(function (c) { csel.appendChild(h('<option value="' + esc(c.id) + '"' + (c.id === model.cart ? " selected" : "") + ">" + esc(c.name) + "</option>")); });
+    csel.addEventListener("change", function () { model.cart = this.value; });
+    cfld.appendChild(csel);
+    meta.appendChild(dfld); meta.appendChild(cfld);
+    var tfld = h('<label class="fld"><span>Route # that day</span><input type="number" min="1" step="1" value="' + esc(model.trip) + '"></label>');
+    tfld.querySelector("input").addEventListener("input", function () { model.trip = num(this.value) || 1; });
+    meta.appendChild(tfld);
+    b.appendChild(meta);
+
+    b.appendChild(h('<div class="tiny muted" style="margin-top:2px">Enter trays + loose pieces for each. <b>Sold = loaded − leftover.</b></div>'));
+
+    // product rows
+    S.settings.products.forEach(function (p) {
+      b.appendChild(productRow(p, model));
+    });
+
+    // expenses
+    var exWrap = h('<div style="border-top:1px solid var(--line-2); padding-top:12px"></div>');
+    exWrap.appendChild(h('<div class="row" style="justify-content:space-between; margin-bottom:8px"><span style="font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3)">Route expenses</span></div>'));
+    var exList = h('<div class="exp"></div>');
+    function drawEx() {
+      exList.innerHTML = "";
+      if (!model.expenses.length) exList.appendChild(h('<div class="tiny muted">No expenses. Add gas, load, snacks, parking…</div>'));
+      model.expenses.forEach(function (e, idx) {
+        var r = h('<div class="er"></div>');
+        var li = h('<input type="text" placeholder="What for" value="' + esc(e.label || "") + '">');
+        li.addEventListener("input", function () { e.label = this.value; });
+        var ai = h('<input type="number" inputmode="decimal" step="0.01" placeholder="0" value="' + (e.amount != null ? esc(e.amount) : "") + '">');
+        ai.addEventListener("input", function () { e.amount = num(this.value); updateTotals(); });
+        var rm = h('<button class="btn ghost sm" type="button" aria-label="Remove">✕</button>');
+        rm.addEventListener("click", function () { model.expenses.splice(idx, 1); drawEx(); updateTotals(); });
+        r.appendChild(li); r.appendChild(ai); r.appendChild(rm);
+        exList.appendChild(r);
+      });
+    }
+    var addEx = mkBtn("+ Add expense", "sm", function () { model.expenses.push({ label: "", amount: "" }); drawEx(); });
+    addEx.style.marginTop = "8px";
+    exWrap.appendChild(exList); exWrap.appendChild(addEx);
+    b.appendChild(exWrap);
+
+    // running totals
+    var totBox = h('<div class="card pad" style="background:var(--inset); box-shadow:none; display:grid; gap:6px"></div>');
+    b.appendChild(totBox);
+    function updateTotals() {
+      // sync computed pieces spans
+      S.settings.products.forEach(function (p) {
+        var m = model.lines[p.key];
+        var loaded = num(m.loadedTrays) * p.perTray + num(m.loadedLoose);
+        var leftover = num(m.leftoverTrays) * p.perTray + num(m.leftoverLoose);
+        var span = b.querySelector('[data-pcs="' + p.key + '"]');
+        if (span) span.textContent = intc(loaded) + " out · " + intc(leftover) + " back · " + intc(loaded - leftover) + " sold";
+        if (span) span.style.color = (loaded - leftover) < 0 ? "var(--bad)" : "";
+      });
+      var trip = toTrip(model);
+      var c = computeTrip(trip, S.settings);
+      totBox.innerHTML =
+        rowline("Gross sales", peso(c.gross)) +
+        rowline("Seller’s " + pct(c.rate), peso(-c.commission)) +
+        rowline("Route expenses", peso(-c.expenses)) +
+        '<div class="plRow big" style="border:0; padding:6px 0 0"><span class="lbl">Route profit</span><span class="val">' + esc(peso(c.profit)) + "</span></div>";
+    }
+    function rowline(l, v) { return '<div class="row" style="justify-content:space-between"><span class="muted tiny">' + esc(l) + '</span><span class="num tiny">' + esc(v) + "</span></div>"; }
+
+    drawEx();
+    updateTotals();
+    b.addEventListener("input", updateTotals);
+
+    dlg.querySelector("#tSave").addEventListener("click", function () {
+      var trip = toTrip(model);
+      var targetIso = model.date;
+      // remove from old day if date changed
+      if (editing && existing && iso !== targetIso) {
+        var od = getDay(iso); od.trips = (od.trips || []).filter(function (t) { return t.id !== model.id; });
+        saveDay(iso, od);
+      }
+      var d = getDay(targetIso);
+      d.trips = d.trips || [];
+      var i = d.trips.findIndex(function (t) { return t.id === model.id; });
+      if (i >= 0) d.trips[i] = trip; else d.trips.push(trip);
+      saveDay(targetIso, d).then(function () {
+        S.day = targetIso;
+        if (monthOf(targetIso) !== S.month) { S.month = monthOf(targetIso); loadWindow().then(render); } else render();
+      });
+      dlg.close();
+    });
+    dlg.addEventListener("close", function () { dlg.remove(); });
+    document.body.appendChild(dlg);
+    dlg.showModal();
+  }
+
+  function productRow(p, model) {
+    var m = model.lines[p.key];
+    var row = h('<div style="border:1px solid var(--line); border-radius:10px; padding:11px 12px; display:grid; gap:9px"></div>');
+    row.appendChild(h('<div class="row" style="justify-content:space-between"><span class="row" style="gap:8px; font-weight:500"><i style="width:10px;height:10px;border-radius:3px;background:' + pcolor(p.key) + ';display:inline-block"></i>' + esc(p.name) + '</span><span class="muted tiny">' + peso(p.price) + "/pc · " + p.perTray + "/tray</span></div>"));
+    var grid = h('<div class="g2"></div>');
+    grid.appendChild(pairField("Loaded", m, "loadedTrays", "loadedLoose", p));
+    grid.appendChild(pairField("Leftover", m, "leftoverTrays", "leftoverLoose", p));
+    row.appendChild(grid);
+    row.appendChild(h('<div class="tiny mono" data-pcs="' + p.key + '" style="color:var(--ink-3)"></div>'));
+    return row;
+  }
+  function pairField(label, m, kTray, kLoose, p) {
+    var f = h('<label class="fld"><span>' + esc(label) + " — trays + loose</span></label>");
+    var pair = h('<div class="pair"></div>');
+    var t = h('<input type="number" inputmode="numeric" min="0" step="1" placeholder="tray" value="' + (m[kTray] !== "" && m[kTray] != null ? esc(m[kTray]) : "") + '">');
+    var l = h('<input type="number" inputmode="numeric" min="0" step="1" placeholder="pcs" value="' + (m[kLoose] !== "" && m[kLoose] != null ? esc(m[kLoose]) : "") + '">');
+    t.addEventListener("input", function () { m[kTray] = this.value; });
+    l.addEventListener("input", function () { m[kLoose] = this.value; });
+    pair.appendChild(t); pair.appendChild(l);
+    f.appendChild(pair);
+    return f;
+  }
+  function toTrip(model) {
+    var lines = {};
+    S.settings.products.forEach(function (p) {
+      var m = model.lines[p.key];
+      var loaded = num(m.loadedTrays) * p.perTray + num(m.loadedLoose);
+      var leftover = num(m.leftoverTrays) * p.perTray + num(m.leftoverLoose);
+      lines[p.key] = {
+        loadedTrays: m.loadedTrays === "" ? null : num(m.loadedTrays),
+        loadedLoose: m.loadedLoose === "" ? null : num(m.loadedLoose),
+        leftoverTrays: m.leftoverTrays === "" ? null : num(m.leftoverTrays),
+        leftoverLoose: m.leftoverLoose === "" ? null : num(m.leftoverLoose),
+        loaded: loaded, leftover: leftover, price: num(p.price)
+      };
+    });
+    return {
+      id: model.id, cart: String(model.cart), trip: num(model.trip) || 1,
+      lines: lines,
+      expenses: (model.expenses || []).filter(function (e) { return e.label || num(e.amount); })
+        .map(function (e) { return { label: e.label || "Expense", amount: num(e.amount) }; }),
+      updatedAt: new Date().toISOString()
+    };
+  }
+  function nextTripNo(day, cartId) {
+    var n = 0;
+    (day.trips || []).forEach(function (t) { if (String(t.cart) === String(cartId)) n = Math.max(n, num(t.trip) || 0); });
+    return n + 1;
+  }
+
+  /* ---------------- Supplies ---------------- */
+  function viewSupplies() {
+    var frag = document.createDocumentFragment();
+    frag.appendChild(headBar("Supplies", "Ingredients & packaging you buy — feeds monthly profit",
+      [ monthNav(S.month, function (m) { S.month = m; loadWindow().then(render); }),
+        mkBtn("Add purchase", "primary", function () { openSupplyDialog(null); }) ]));
+
+    var doc = getSupplies(S.month);
+    var items = (doc.items || []).slice().sort(function (a, b) { return (a.date || "").localeCompare(b.date || ""); });
+    var total = items.reduce(function (s, it) { return s + num(it.qty) * num(it.amount); }, 0);
+    var byCat = {};
+    items.forEach(function (it) { byCat[it.category || "Misc"] = (byCat[it.category || "Misc"] || 0) + num(it.qty) * num(it.amount); });
+
+    var tiles = h('<section class="tiles" style="margin-bottom:16px"></section>');
+    tiles.appendChild(h('<div class="tile hi"><div class="k">' + esc(fmtMonth(S.month)) + '</div><div class="v">' + peso0(total) + '</div><div class="m">' + items.length + " purchase" + (items.length === 1 ? "" : "s") + "</div></div>"));
+    Object.keys(byCat).sort().forEach(function (c) {
+      tiles.appendChild(h('<div class="tile"><div class="k">' + esc(c) + '</div><div class="v">' + peso0(byCat[c]) + "</div></div>"));
+    });
+    frag.appendChild(tiles);
+
+    if (!items.length) {
+      var e = h('<section class="card"><div class="empty"><h3>No purchases logged for ' + esc(fmtMonth(S.month)) + '</h3><p>Record flour, sugar, cheese, plastic, delivery fees…</p></div></section>');
+      e.querySelector(".empty").appendChild(mkBtn("Add purchase", "primary", function () { openSupplyDialog(null); }));
+      frag.appendChild(e);
+      return frag;
+    }
+
+    var card = h('<section class="card"></section>');
+    var tw = h('<div class="tblwrap"><table class="t"><thead><tr><th>Date</th><th>Supplier</th><th>Category</th><th>Item</th><th class="n">Qty</th><th>UOM</th><th class="n">Unit</th><th class="n">Total</th><th></th></tr></thead><tbody></tbody></table></div>');
+    var tb = tw.querySelector("tbody");
+    items.forEach(function (it) {
+      var tr = h("<tr></tr>");
+      tr.innerHTML =
+        "<td>" + esc(fmtDate(it.date, { month: "short", day: "numeric" })) + "</td>" +
+        "<td>" + esc(it.supplier || "—") + "</td>" +
+        '<td><span class="pill">' + esc(it.category || "Misc") + "</span></td>" +
+        "<td>" + esc(it.item || "—") + "</td>" +
+        '<td class="n">' + intc(it.qty) + "</td>" +
+        "<td>" + esc(it.uom || "") + "</td>" +
+        '<td class="n">' + peso(it.amount) + "</td>" +
+        '<td class="n">' + peso0(num(it.qty) * num(it.amount)) + "</td>" +
+        '<td class="n"></td>';
+      var ed = h('<button class="btn ghost sm" type="button">Edit</button>');
+      ed.addEventListener("click", function () { openSupplyDialog(it); });
+      tr.lastElementChild.appendChild(ed);
+      tb.appendChild(tr);
+    });
+    tb.appendChild(h('<tr class="tot"><td colspan="7">Total — ' + esc(fmtMonth(S.month)) + '</td><td class="n">' + peso0(total) + '</td><td></td></tr>'));
+    card.appendChild(tw);
+    frag.appendChild(card);
+    return frag;
+  }
+
+  function openSupplyDialog(existing) {
+    var editing = !!existing;
+    var m = existing ? JSON.parse(JSON.stringify(existing)) : { id: uid(), date: S.day && monthOf(S.day) === S.month ? S.day : monthStart(S.month), supplier: "", category: S.settings.supplyCategories[0] || "Food", item: "", qty: 1, uom: "", amount: "" };
+    var dlg = h("<dialog></dialog>");
+    dlg.innerHTML =
+      '<form method="dialog"><div class="dlg-h"><h2>' + (editing ? "Edit purchase" : "Add purchase") + '</h2>' +
+      '<button class="btn ghost sm" value="cancel" type="submit">✕</button></div><div class="dlg-b">' +
+      '<datalist id="dlSup">' + SUPPLIER_HINTS.map(function (x) { return '<option value="' + esc(x) + '">'; }).join("") + "</datalist>" +
+      '<datalist id="dlItem">' + ITEM_HINTS.map(function (x) { return '<option value="' + esc(x) + '">'; }).join("") + "</datalist>" +
+      '<datalist id="dlUom">' + UOM_HINTS.map(function (x) { return '<option value="' + esc(x) + '">'; }).join("") + "</datalist>" +
+      '<div class="g2">' +
+      '<label class="fld"><span>Date</span><input type="date" name="date" value="' + esc(m.date) + '"></label>' +
+      '<label class="fld"><span>Category</span><select name="category">' + S.settings.supplyCategories.map(function (c) { return '<option' + (c === m.category ? " selected" : "") + ">" + esc(c) + "</option>"; }).join("") + "</select></label>" +
+      '<label class="fld"><span>Supplier</span><input type="text" name="supplier" list="dlSup" value="' + esc(m.supplier || "") + '"></label>' +
+      '<label class="fld"><span>Item</span><input type="text" name="item" list="dlItem" value="' + esc(m.item || "") + '"></label>' +
+      '<label class="fld"><span>Quantity</span><input type="number" name="qty" inputmode="decimal" step="0.01" value="' + esc(m.qty) + '"></label>' +
+      '<label class="fld"><span>Unit (UOM)</span><input type="text" name="uom" list="dlUom" value="' + esc(m.uom || "") + '"></label>' +
+      '<label class="fld"><span>Unit price</span><input type="number" name="amount" inputmode="decimal" step="0.01" value="' + esc(m.amount) + '"></label>' +
+      '<label class="fld"><span>Line total</span><input type="text" id="sLineTot" readonly value=""></label>' +
+      "</div></div>" +
+      '<div class="dlg-f">' + (editing ? '<button class="btn ghost danger" id="sDel" type="button">Delete</button>' : "") +
+      '<span class="grow"></span><button class="btn ghost" value="cancel" type="submit">Cancel</button>' +
+      '<button class="btn primary" id="sSave" type="button">' + (editing ? "Save" : "Add") + "</button></div></form>";
+    var f = dlg.querySelector("form");
+    function tot() { var t = num(f.qty.value) * num(f.amount.value); f.querySelector("#sLineTot").value = peso(t); }
+    f.addEventListener("input", tot); tot();
+    dlg.querySelector("#sSave").addEventListener("click", function () {
+      var it = { id: m.id, date: f.date.value || monthStart(S.month), supplier: f.supplier.value.trim(),
+        category: f.category.value, item: f.item.value.trim(), qty: num(f.qty.value), uom: f.uom.value.trim(), amount: num(f.amount.value) };
+      var targetMonth = monthOf(it.date);
+      // load target month doc if different and not cached
+      var chain = Promise.resolve();
+      if (!S.supplies[targetMonth] && targetMonth !== S.month) {
+        chain = store.getDoc("supplies/" + targetMonth).then(function (d) { S.supplies[targetMonth] = d || { month: targetMonth, items: [] }; });
+      }
+      chain.then(function () {
+        // remove from any month it might have lived in
+        Object.keys(S.supplies).forEach(function (mk) {
+          var dd = S.supplies[mk]; if (!dd) return;
+          dd.items = (dd.items || []).filter(function (x) { return x.id !== it.id; });
+        });
+        var dest = getSupplies(targetMonth);
+        dest.items = dest.items || []; dest.items.push(it);
+        var saves = [saveSupplies(targetMonth, dest)];
+        Object.keys(S.supplies).forEach(function (mk) { if (mk !== targetMonth) saves.push(store.setDoc("supplies/" + mk, S.supplies[mk])); });
+        Promise.all(saves).then(function () { if (targetMonth !== S.month) { S.month = targetMonth; loadWindow().then(render); } else render(); });
+      });
+      dlg.close();
+    });
+    var delBtn = dlg.querySelector("#sDel");
+    if (delBtn) delBtn.addEventListener("click", function () {
+      if (!confirm("Delete this purchase?")) return;
+      var doc = getSupplies(S.month); doc.items = (doc.items || []).filter(function (x) { return x.id !== m.id; });
+      saveSupplies(S.month, doc).then(render); dlg.close();
+    });
+    dlg.addEventListener("close", function () { dlg.remove(); });
+    document.body.appendChild(dlg); dlg.showModal();
+  }
+
+  /* ---------------- Reports ---------------- */
+  function viewReports() {
+    var frag = document.createDocumentFragment();
+    var rangeSel = h('<select style="width:auto"><option value="1">This month only</option><option value="3">Last 3 months</option><option value="6">Last 6 months</option><option value="12">Last 12 months</option></select>');
+    rangeSel.value = String(S.reportRange);
+    rangeSel.addEventListener("change", function () { S.reportRange = num(this.value) || 1; renderReport(); });
+
+    var exportBtn = mkBtn("Export CSV", "", function () { exportCsv(); });
+
+    frag.appendChild(headBar("Reports", "Profit & loss, the way the summary sheet totalled it",
+      [ monthNav(S.reportMonth, function (m) { S.reportMonth = m; renderReport(); }), rangeSel, exportBtn ]));
+
+    var body = h('<div id="rptBody"></div>');
+    frag.appendChild(body);
+
+    // fetch + render
+    setTimeout(renderReport, 0);
+    return frag;
+
+    function renderReport() {
+      var body = $("#rptBody"); if (!body) return;
+      body.innerHTML = '<div class="empty"><span class="muted tiny">Crunching numbers…</span></div>';
+      var end = S.reportMonth;
+      var start = addMonths(end, -(S.reportRange - 1));
+      var months = [];
+      for (var m = start; m <= end; m = addMonths(m, 1)) months.push(m);
+      Promise.all([
+        store.queryDays(monthStart(start), monthEnd(end)),
+        Promise.all(months.map(function (mm) { return store.getDoc("supplies/" + mm); }))
+      ]).then(function (res) {
+        var daysArr = res[0] || [];
+        var supArr = (res[1] || []).filter(Boolean);
+        var r = computeRange(daysArr, supArr, S.settings);
+        body.innerHTML = "";
+        body.appendChild(reportContent(r, months, daysArr, supArr, start, end));
+      });
+    }
+  }
+
+  function reportContent(r, months, daysArr, supArr, start, end) {
+    var wrap = h("<div style='display:grid; gap:16px'></div>");
+    var label = months.length === 1 ? fmtMonth(end) : (fmtMonth(start) + " – " + fmtMonth(end));
+
+    var tiles = h('<section class="tiles"></section>');
+    [
+      ["Gross sales", peso0(r.gross)],
+      ["Net profit", peso0(r.netProfit)],
+      ["Margin", pct(r.margin)],
+      ["Pieces sold", intc(r.pieces)],
+      ["Selling days", intc(r.days)],
+      ["Routes", intc(r.trips)]
+    ].forEach(function (t, i) { tiles.appendChild(h('<div class="tile ' + (i === 1 ? "hi" : "") + '"><div class="k">' + esc(t[0]) + '</div><div class="v">' + esc(t[1]) + "</div></div>")); });
+    wrap.appendChild(tiles);
+
+    var pl = h('<section class="card pad"></section>');
+    pl.appendChild(h("<h2 style='margin-bottom:4px'>Profit &amp; loss</h2><div class='tiny muted' style='margin-bottom:10px'>" + esc(label) + "</div>"));
+    var list = h('<div class="plList"></div>');
+    S.settings.products.forEach(function (p) {
+      var bp = r.byProd[p.key] || { sold: 0, revenue: 0 };
+      list.appendChild(h('<div class="plRow sub"><span class="lbl">' + esc(p.name) + '</span><span class="val">' + intc(bp.sold) + " pcs · " + peso0(bp.revenue) + "</span></div>"));
+    });
+    list.appendChild(h('<div class="plRow big"><span class="lbl">Gross sales</span><span class="val">' + peso0(r.gross) + "</span></div>"));
+    list.appendChild(h('<div class="plRow"><span class="lbl">Seller’s share (' + pct(S.settings.commissionRate) + ')</span><span class="val">' + peso0(-r.commission) + "</span></div>"));
+    list.appendChild(h('<div class="plRow"><span class="lbl">Net of seller</span><span class="val">' + peso0(r.net) + "</span></div>"));
+    list.appendChild(h('<div class="plRow"><span class="lbl">Route expenses</span><span class="val">' + peso0(-r.tripExpenses) + "</span></div>"));
+    list.appendChild(h('<div class="plRow big"><span class="lbl">Route profit</span><span class="val">' + peso0(r.routeProfit) + "</span></div>"));
+    Object.keys(r.supplyByCat).sort().forEach(function (c) {
+      list.appendChild(h('<div class="plRow sub"><span class="lbl">' + esc(c) + '</span><span class="val">' + peso0(-r.supplyByCat[c]) + "</span></div>"));
+    });
+    list.appendChild(h('<div class="plRow"><span class="lbl">Supply purchases</span><span class="val">' + peso0(-r.supplyTotal) + "</span></div>"));
+    list.appendChild(h('<div class="plRow big"><span class="lbl">Net profit</span><span class="val">' + peso0(r.netProfit) + "</span></div>"));
+    list.appendChild(h('<div class="plRow"><span class="lbl">Margin on gross</span><span class="val">' + pct(r.margin) + "</span></div>"));
+    pl.appendChild(list);
+    wrap.appendChild(pl);
+
+    if (Object.keys(r.byCart).length) {
+      var cc = h('<section class="card pad"></section>');
+      cc.appendChild(h("<h3 style='margin-bottom:8px'>Route profit by cart</h3>"));
+      var cl = h('<div class="plList"></div>');
+      Object.keys(r.byCart).sort().forEach(function (k) { cl.appendChild(h('<div class="plRow"><span class="lbl">' + esc(cartName(k)) + '</span><span class="val">' + peso0(r.byCart[k]) + "</span></div>")); });
+      cc.appendChild(cl); wrap.appendChild(cc);
+    }
+
+    // monthly table when multi-month
+    if (months.length > 1) {
+      var byMonth = {};
+      months.forEach(function (mm) { byMonth[mm] = { gross: 0, commission: 0, net: 0, exp: 0, profit: 0, supply: 0 }; });
+      daysArr.forEach(function (d) {
+        var mm = monthOf(d.date); if (!byMonth[mm]) return;
+        var c = computeDay(d, S.settings);
+        byMonth[mm].gross += c.gross; byMonth[mm].commission += c.commission; byMonth[mm].net += c.net;
+        byMonth[mm].exp += c.expenses; byMonth[mm].profit += c.profit;
+      });
+      supArr.forEach(function (sm) {
+        var mm = sm.month; if (!byMonth[mm]) return;
+        (sm.items || []).forEach(function (it) { byMonth[mm].supply += num(it.qty) * num(it.amount); });
+      });
+      var mc = h('<section class="card"></section>');
+      var tw = h('<div class="tblwrap"><table class="t"><thead><tr><th>Month</th><th class="n">Gross</th><th class="n">Seller 15%</th><th class="n">Route exp</th><th class="n">Route profit</th><th class="n">Supplies</th><th class="n">Net profit</th></tr></thead><tbody></tbody></table></div>');
+      var tb = tw.querySelector("tbody");
+      months.forEach(function (mm) {
+        var x = byMonth[mm]; var net = x.profit - x.supply;
+        tb.appendChild(h("<tr><td>" + esc(fmtMonth(mm)) + "</td><td class='n'>" + peso0(x.gross) + "</td><td class='n'>" + peso0(x.commission) + "</td><td class='n'>" + peso0(x.exp) + "</td><td class='n'>" + peso0(x.profit) + "</td><td class='n'>" + peso0(x.supply) + "</td><td class='n'>" + peso0(net) + "</td></tr>"));
+      });
+      tb.appendChild(h("<tr class='tot'><td>Total</td><td class='n'>" + peso0(r.gross) + "</td><td class='n'>" + peso0(r.commission) + "</td><td class='n'>" + peso0(r.tripExpenses) + "</td><td class='n'>" + peso0(r.routeProfit) + "</td><td class='n'>" + peso0(r.supplyTotal) + "</td><td class='n'>" + peso0(r.netProfit) + "</td></tr>"));
+      mc.appendChild(tw); wrap.appendChild(mc);
+    }
+
+    if (!r.trips && !r.supplyTotal) {
+      wrap.innerHTML = "";
+      wrap.appendChild(h('<section class="card"><div class="empty"><h3>Nothing recorded for ' + esc(label) + '</h3><p>Log routes and supply purchases to see the P&amp;L here.</p></div></section>'));
+    }
+    return wrap;
+  }
+
+  function exportCsv() {
+    var end = S.reportMonth, start = addMonths(end, -(S.reportRange - 1));
+    store.queryDays(monthStart(start), monthEnd(end)).then(function (daysArr) {
+      var rows = [["Date", "Cart", "Route", "Bread", "Loaded", "Leftover", "Sold", "Price", "Revenue", "Route gross", "Seller 15%", "Route expenses", "Route profit"]];
+      daysArr.forEach(function (d) {
+        (d.trips || []).forEach(function (t) {
+          var c = computeTrip(t, S.settings);
+          S.settings.products.forEach(function (p) {
+            var l = c.lines[p.key];
+            rows.push([d.date, cartName(t.cart), t.trip || 1, p.name, l.loaded, l.leftover, l.sold, l.price, round2(l.revenue), round2(c.gross), round2(c.commission), round2(c.expenses), round2(c.profit)]);
+          });
+        });
+      });
+      var csv = rows.map(function (r) { return r.map(csvCell).join(","); }).join("\r\n");
+      var name = "KRP_routes_" + start + "_to_" + end + ".csv";
+      offerDownload(name, csv);
+    });
+  }
+  function round2(n) { return Math.round(num(n) * 100) / 100; }
+  function csvCell(v) { v = String(v == null ? "" : v); return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+  function offerDownload(filename, text) {
+    function fallback() {
+      try {
+        var blob = new Blob([text], { type: "text/csv" });
+        var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+        toast("Downloaded " + filename);
+      } catch (e) { toast("Could not export"); }
+    }
+    if (downloadsCap === null && window.claude && window.claude.use) {
+      window.claude.use("downloads").then(function (d) { downloadsCap = d || false; doIt(); }).catch(function () { downloadsCap = false; doIt(); });
+    } else doIt();
+    function doIt() {
+      if (downloadsCap && downloadsCap.save) {
+        downloadsCap.save({ filename: filename, data: text }).then(function () { toast("Saved " + filename); }).catch(fallback);
+      } else fallback();
+    }
+  }
+
+  /* ---------------- Settings ---------------- */
+  function viewSettings() {
+    var frag = document.createDocumentFragment();
+    frag.appendChild(headBar("Settings", "Products, prices, tray sizes, carts, commission"));
+
+    // commission
+    var cCard = h('<section class="card pad" style="margin-bottom:16px"></section>');
+    cCard.appendChild(h("<h2 style='margin-bottom:10px'>Seller commission</h2>"));
+    var crow = h('<div class="row" style="gap:10px; align-items:end"></div>');
+    var ci = h('<label class="fld" style="width:140px"><span>Rate %</span><input type="number" step="0.5" min="0" max="100" value="' + (num(S.settings.commissionRate) * 100) + '"></label>');
+    crow.appendChild(ci);
+    crow.appendChild(h('<span class="tiny muted">of each route’s gross sales, deducted before route expenses</span>'));
+    cCard.appendChild(crow);
+    cCard.appendChild(saveBar(function () {
+      var v = num(ci.querySelector("input").value) / 100;
+      S.settings.commissionRate = Math.max(0, Math.min(1, v));
+      saveSettings().then(function () { toast("Saved"); render(); });
+    }));
+    frag.appendChild(cCard);
+
+    // products
+    var pCard = h('<section class="card pad" style="margin-bottom:16px"></section>');
+    pCard.appendChild(h('<div class="row" style="justify-content:space-between; margin-bottom:10px"><h2>Bread types</h2></div>'));
+    var pBody = h('<div style="display:grid; gap:10px"></div>');
+    var working = JSON.parse(JSON.stringify(S.settings.products));
+    function drawProducts() {
+      pBody.innerHTML = "";
+      working.forEach(function (p, idx) {
+        var r = h('<div class="row wrap" style="gap:8px; align-items:end; border:1px solid var(--line); border-radius:10px; padding:10px"></div>');
+        r.appendChild(h('<i style="width:12px;height:12px;border-radius:3px;background:' + pcolor(p.key) + ';margin-bottom:10px"></i>'));
+        var n = h('<label class="fld grow" style="min-width:150px"><span>Name</span><input type="text" value="' + esc(p.name) + '"></label>');
+        var pr = h('<label class="fld" style="width:110px"><span>Price /pc</span><input type="number" step="0.25" value="' + esc(p.price) + '"></label>');
+        var tr = h('<label class="fld" style="width:110px"><span>Pcs /tray</span><input type="number" step="1" min="1" value="' + esc(p.perTray) + '"></label>');
+        n.querySelector("input").addEventListener("input", function () { p.name = this.value; });
+        pr.querySelector("input").addEventListener("input", function () { p.price = num(this.value); });
+        tr.querySelector("input").addEventListener("input", function () { p.perTray = Math.max(1, num(this.value) || 1); });
+        r.appendChild(n); r.appendChild(pr); r.appendChild(tr);
+        var rm = h('<button class="btn ghost sm danger" type="button" style="margin-bottom:2px">Remove</button>');
+        rm.addEventListener("click", function () { if (working.length <= 1) { toast("Keep at least one bread type"); return; } working.splice(idx, 1); drawProducts(); });
+        r.appendChild(rm);
+        pBody.appendChild(r);
+      });
+    }
+    drawProducts();
+    var addP = mkBtn("+ Add bread type", "sm", function () { working.push({ key: "bread-" + uid().slice(0, 5), name: "New Bread", price: 0, perTray: 20 }); drawProducts(); });
+    addP.style.marginTop = "10px";
+    pCard.appendChild(pBody); pCard.appendChild(addP);
+    pCard.appendChild(saveBar(function () {
+      S.settings.products = working.map(function (p) { return { key: p.key, name: p.name || "Bread", price: num(p.price), perTray: Math.max(1, num(p.perTray) || 1) }; });
+      saveSettings().then(function () { toast("Saved"); render(); });
+    }));
+    frag.appendChild(pCard);
+
+    // carts
+    var kCard = h('<section class="card pad" style="margin-bottom:16px"></section>');
+    kCard.appendChild(h("<h2 style='margin-bottom:10px'>Rolling carts</h2>"));
+    var kBody = h('<div style="display:grid; gap:8px"></div>');
+    var wCarts = JSON.parse(JSON.stringify(S.settings.carts));
+    function drawCarts() {
+      kBody.innerHTML = "";
+      wCarts.forEach(function (c, idx) {
+        var r = h('<div class="row" style="gap:8px"></div>');
+        var n = h('<input type="text" value="' + esc(c.name) + '">');
+        n.addEventListener("input", function () { c.name = this.value; });
+        r.appendChild(n);
+        var rm = h('<button class="btn ghost sm danger" type="button">Remove</button>');
+        rm.addEventListener("click", function () { if (wCarts.length <= 1) { toast("Keep at least one cart"); return; } wCarts.splice(idx, 1); drawCarts(); });
+        r.appendChild(rm);
+        kBody.appendChild(r);
+      });
+    }
+    drawCarts();
+    var addK = mkBtn("+ Add cart", "sm", function () { wCarts.push({ id: uid().slice(0, 6), name: "Cart " + (wCarts.length + 1) }); drawCarts(); });
+    addK.style.marginTop = "10px";
+    kCard.appendChild(kBody); kCard.appendChild(addK);
+    kCard.appendChild(saveBar(function () {
+      S.settings.carts = wCarts.map(function (c, i) { return { id: String(c.id || (i + 1)), name: c.name || ("Cart " + (i + 1)) }; });
+      saveSettings().then(function () { toast("Saved"); render(); });
+    }));
+    frag.appendChild(kCard);
+
+    // data / about
+    var aCard = h('<section class="card pad"></section>');
+    aCard.appendChild(h("<h3 style='margin-bottom:6px'>About your data</h3>"));
+    aCard.appendChild(h('<p class="tiny muted" style="margin:0">' +
+      (store.kind === "db"
+        ? "Saved to your private Claude workspace — open this page on any device you’re signed in on and the data follows."
+        : "Saved in this browser only (offline mode). Use the published link while signed in to sync across devices.") +
+      " Routes are stored one document per day; supplies one per month.</p>"));
+    frag.appendChild(aCard);
+    return frag;
+  }
+  function saveBar(fn) {
+    var bar = h('<div class="row" style="justify-content:flex-end; margin-top:12px"></div>');
+    bar.appendChild(mkBtn("Save", "primary", fn));
+    return bar;
+  }
+
+  /* ---------------- shared UI bits ---------------- */
+  function mkBtn(label, kind, fn) {
+    var b = h('<button type="button" class="btn ' + (kind ? kind.split(" ").join(" ") : "") + '">' + esc(label) + "</button>");
+    b.addEventListener("click", fn);
+    return b;
+  }
+
+  /* ---------------- theme ---------------- */
+  function initTheme() {
+    var saved = null;
+    try { saved = localStorage.getItem("krp:theme"); } catch (e) {}
+    if (saved === "dark" || saved === "light") document.documentElement.setAttribute("data-theme", saved);
+    $("#themeBtn").addEventListener("click", function () {
+      var cur = document.documentElement.getAttribute("data-theme");
+      var next = cur === "dark" ? "light" : cur === "light" ? "dark" : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "light" : "dark");
+      document.documentElement.setAttribute("data-theme", next);
+      try { localStorage.setItem("krp:theme", next); } catch (e) {}
+    });
+  }
+
+  /* ============================ boot ============================ */
+  function boot() {
+    initTheme();
+    syncNav();
+    initStore().then(function (st) {
+      store = st;
+      $("#storeState").textContent = st.kind === "db" ? "Synced · cloud" : "Offline · this browser";
+      return loadSettings();
+    }).then(loadWindow).then(function () {
+      render();
+    }).catch(function (e) {
+      $("#view").innerHTML = '<div class="empty"><h3>Could not start</h3><p class="tiny muted">' + esc(String(e && e.message || e)) + "</p></div>";
+    });
+
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "visible" && store) loadWindow().then(render);
+    });
+  }
+  boot();
+})();
+</script>
