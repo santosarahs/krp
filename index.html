@@ -249,6 +249,7 @@
   <main class="main" id="view"><div class="empty"><h3>Loading your ledger…</h3></div></main>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function () {
   "use strict";
@@ -309,8 +310,16 @@
   }
 
   /* ============================ storage ============================ */
-  // Unified async store: db capability when present, else localStorage.
+  // Unified async store: Claude db capability inside the artifact,
+  // Supabase on the hosted (Vercel) copy, localStorage as last resort.
   var store = null;
+
+  // Supabase project — shared with santosfamilyhealth (separate table, own row-level security).
+  // The anon key is public by design; access is enforced by the policies in supabase/schema.sql.
+  var SUPABASE_URL = "https://gzsbsbrthiitbclkghnp.supabase.co";
+  var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6c2JzYnJ0aGlpdGJjbGtnaG5wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgzMjYyODgsImV4cCI6MjEwMzkwMjI4OH0.W4UU9W9g3FHNCAjmwuLPIvVIp8RmG4_iPbpFTxkehn0";
+  var sb = null;        // supabase client (only on the hosted copy)
+  var authEmail = null; // signed-in email, for the sidebar
 
   function localStore() {
     var P = "krp:";
@@ -350,11 +359,116 @@
     };
   }
 
+  function supabaseStore(client, userId) {
+    function unwrap(p) { return p.then(function (r) { if (r.error) throw r.error; return r.data; }); }
+    return {
+      kind: "supabase",
+      getDoc: function (path) {
+        return unwrap(client.from("krp_docs").select("data").eq("owner", userId).eq("path", path).maybeSingle())
+          .then(function (row) { return row ? row.data : null; }).catch(function () { return null; });
+      },
+      setDoc: function (path, obj) {
+        return unwrap(client.from("krp_docs").upsert(
+          { owner: userId, path: path, data: obj, updated_at: new Date().toISOString() },
+          { onConflict: "owner,path" }
+        ));
+      },
+      queryDays: function (start, end) {
+        return unwrap(client.from("krp_docs").select("data")
+            .eq("owner", userId).gte("path", "days/" + start).lte("path", "days/" + end).order("path"))
+          .then(function (rows) { return (rows || []).map(function (r) { return r.data; }); })
+          .catch(function () { return []; });
+      }
+    };
+  }
+
+  function supabaseConfigured() {
+    return /^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(SUPABASE_URL) && !!SUPABASE_ANON_KEY && SUPABASE_ANON_KEY.length > 20;
+  }
+  function loadSupabaseLib() {
+    return new Promise(function (resolve) {
+      if (window.supabase && window.supabase.createClient) return resolve(window.supabase);
+      var n = 0, iv = setInterval(function () {
+        if (window.supabase && window.supabase.createClient) { clearInterval(iv); resolve(window.supabase); }
+        else if (++n > 100) { clearInterval(iv); resolve(null); }
+      }, 100);
+    });
+  }
+
+  // Resolves to "ok" (store ready) or "gate" (login screen shown).
   function initStore() {
-    if (!(window.claude && typeof window.claude.use === "function")) return Promise.resolve(localStore());
-    return window.claude.use("db").then(function (db) {
-      return db ? dbStore(db) : localStore();
-    }).catch(function () { return localStore(); });
+    if (window.claude && typeof window.claude.use === "function") {
+      return window.claude.use("db")
+        .then(function (db) { store = db ? dbStore(db) : localStore(); })
+        .catch(function () { store = localStore(); })
+        .then(function () { return "ok"; });
+    }
+    if (!supabaseConfigured()) { store = localStore(); return Promise.resolve("ok"); }
+    return loadSupabaseLib().then(function (lib) {
+      if (!lib) { store = localStore(); return "ok"; }
+      sb = lib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+      sb.auth.onAuthStateChange(function (evt, session) {
+        if ((evt === "SIGNED_IN" || evt === "INITIAL_SESSION") && session && !store) continueAfterAuth(session);
+        else if (evt === "SIGNED_OUT") location.reload();
+      });
+      return sb.auth.getSession().then(function (res) {
+        var session = res.data && res.data.session;
+        if (!session) { renderLoginGate(); return "gate"; }
+        setupSupabaseStore(session);
+        return "ok";
+      });
+    });
+  }
+  function setupSupabaseStore(session) {
+    authEmail = (session.user && session.user.email) || null;
+    store = supabaseStore(sb, session.user.id);
+  }
+  function continueAfterAuth(session) {
+    S.gate = false;
+    setupSupabaseStore(session);
+    setStoreState(); addSignOut();
+    loadSettings().then(loadWindow).then(render).catch(showBootError);
+  }
+  function setStoreState() {
+    var el = $("#storeState"); if (!el) return;
+    if (store && store.kind === "supabase") el.textContent = "Synced · " + (authEmail || "Supabase");
+    else if (store && store.kind === "db") el.textContent = "Synced · cloud";
+    else if (S.gate) el.textContent = "Not signed in";
+    else el.textContent = "Offline · this browser";
+  }
+  function addSignOut() {
+    if ($("#signOutBtn") || !(store && store.kind === "supabase")) return;
+    var so = h('<button type="button" id="signOutBtn">Sign out</button>');
+    so.addEventListener("click", function () { try { sb.auth.signOut(); } catch (e) {} });
+    var ss = $("#storeState"); if (ss && ss.after) ss.after(so);
+  }
+  function showBootError(e) {
+    $("#view").innerHTML = '<div class="empty"><h3>Could not start</h3><p class="tiny muted">' + esc(String((e && e.message) || e)) + "</p></div>";
+  }
+
+  function renderLoginGate(msg) {
+    S.gate = true;
+    setStoreState();
+    var v = $("#view"); v.innerHTML = "";
+    var card = h('<div class="card pad" style="max-width:400px; margin:8vh auto 0; display:grid; gap:14px"></div>');
+    card.appendChild(h('<div><h1 style="font-size:23px">Sign in</h1><p class="sub" style="margin-top:6px">Your ledger syncs through Supabase. Enter your email and we’ll send a one-tap sign-in link.</p></div>'));
+    var email = h('<label class="fld"><span>Email</span><input type="email" autocomplete="email" inputmode="email" placeholder="you@example.com"></label>');
+    card.appendChild(email);
+    if (msg) card.appendChild(h('<p class="tiny" style="color:var(--bad)">' + esc(msg) + "</p>"));
+    var btn = mkBtn("Send sign-in link", "primary", function () {
+      var addr = email.querySelector("input").value.trim();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(addr)) { renderLoginGate("That doesn’t look like an email address."); return; }
+      btn.disabled = true; btn.textContent = "Sending…";
+      sb.auth.signInWithOtp({ email: addr, options: { emailRedirectTo: location.origin + location.pathname } })
+        .then(function (r) {
+          if (r.error) { renderLoginGate(r.error.message); return; }
+          v.innerHTML = "";
+          v.appendChild(h('<div class="card pad" style="max-width:400px; margin:8vh auto 0"><h1 style="font-size:20px">Check your email</h1><p class="sub" style="margin-top:8px">A sign-in link is on its way to <b>' + esc(addr) + "</b>. Open it on this device to finish.</p></div>"));
+        })
+        .catch(function (e) { renderLoginGate(String((e && e.message) || e)); });
+    });
+    card.appendChild(btn);
+    v.appendChild(card);
   }
 
   var downloadsCap = null; // resolved lazily
@@ -370,7 +484,8 @@
     days: {},                     // iso -> day doc  (current working window)
     supplies: {},                 // 'YYYY-MM' -> supplies doc
     hasAnyData: false,
-    quickEx: null                 // transient quick-add example dismissed flag
+    quickEx: null,                // transient quick-add example dismissed flag
+    gate: false                   // true while the Supabase sign-in screen owns the view
   };
 
   function P() { return S.settings.products; }
@@ -485,7 +600,7 @@
   function saveSupplies(m, obj) { obj.month = m; S.supplies[m] = obj; return store.setDoc("supplies/" + m, obj).then(function () { toast("Saved"); }); }
 
   /* ============================ rendering ============================ */
-  function setView(v) { S.view = v; syncNav(); render(); window.scrollTo(0, 0); }
+  function setView(v) { if (S.gate) return; S.view = v; syncNav(); render(); window.scrollTo(0, 0); }
   function syncNav() {
     var nav = $("#nav"); nav.innerHTML = "";
     NAV.forEach(function (n) {
@@ -496,7 +611,9 @@
   }
 
   function render() {
+    if (S.gate) return;
     var mount = $("#view");
+    if (!store || !S.settings) { mount.innerHTML = '<div class="empty"><h3>Loading…</h3></div>'; return; }
     mount.innerHTML = "";
     var fn = ({ dashboard: viewDashboard, routes: viewRoutes, supplies: viewSupplies, reports: viewReports, settings: viewSettings })[S.view] || viewDashboard;
     mount.appendChild(fn());
@@ -1342,18 +1459,15 @@
   function boot() {
     initTheme();
     syncNav();
-    initStore().then(function (st) {
-      store = st;
-      $("#storeState").textContent = st.kind === "db" ? "Synced · cloud" : "Offline · this browser";
-      return loadSettings();
-    }).then(loadWindow).then(function () {
-      render();
-    }).catch(function (e) {
-      $("#view").innerHTML = '<div class="empty"><h3>Could not start</h3><p class="tiny muted">' + esc(String(e && e.message || e)) + "</p></div>";
-    });
+    initStore().then(function (status) {
+      setStoreState();
+      if (status === "gate") return;
+      addSignOut();
+      return loadSettings().then(loadWindow).then(render);
+    }).catch(showBootError);
 
     document.addEventListener("visibilitychange", function () {
-      if (document.visibilityState === "visible" && store) loadWindow().then(render);
+      if (document.visibilityState === "visible" && store && !S.gate) loadWindow().then(render);
     });
   }
   boot();
