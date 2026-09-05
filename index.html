@@ -521,6 +521,8 @@
     reportMonth: monthOf(todayISO()),
     reportRange: 1,               // months back for report (1 = just this month)
     days: {},                     // iso -> day doc  (current working window)
+    routesMode: "day",             // Routes tab: "day" (cards) or "table"
+    routesBy: "route",             // Table sub-view: "route" or "day"
     supplies: {},                 // 'YYYY-MM' -> supplies doc
     hasAnyData: false,
     quickEx: null,                // transient quick-add example dismissed flag
@@ -840,10 +842,26 @@
   }
 
   /* ---------------- Routes ---------------- */
+  function segToggle(options, current, onChange) {
+    var el = h('<div class="segbar" role="group"></div>');
+    options.forEach(function (o) {
+      var b = h('<button type="button" class="' + (o[0] === current ? "on" : "") + '">' + esc(o[1]) + "</button>");
+      b.addEventListener("click", function () { onChange(o[0]); });
+      el.appendChild(b);
+    });
+    return el;
+  }
+
   function viewRoutes() {
     var frag = document.createDocumentFragment();
-    frag.appendChild(headBar("Routes", canEdit() ? "Count in, count leftovers, log expenses" : "View only",
-      canEdit() ? [ mkBtn("Add route", "primary", function () { openTripDialog(S.day, null, null); }) ] : null));
+    var modeToggle = segToggle([["day", "Day"], ["table", "Table"]], S.routesMode, function (v) { S.routesMode = v; render(); });
+    var actions = [modeToggle];
+    if (S.routesMode === "day" && canEdit()) actions.push(mkBtn("Add route", "primary", function () { openTripDialog(S.day, null, null); }));
+    frag.appendChild(headBar("Routes",
+      S.routesMode === "table" ? "Every route this month, side by side" : (canEdit() ? "Count in, count leftovers, log expenses" : "View only"),
+      actions));
+
+    if (S.routesMode === "table") { frag.appendChild(viewRoutesTable()); return frag; }
 
     var picker = h('<section class="card pad" style="margin-bottom:16px; display:flex; gap:14px; align-items:end; flex-wrap:wrap"></section>');
     var dl = h('<label class="fld"><span>Date</span></label>');
@@ -889,6 +907,81 @@
     return frag;
   }
   function plr(l, v, big) { return h('<div class="plRow ' + (big ? "big" : "") + '"><span class="lbl">' + esc(l) + '</span><span class="val">' + esc(v) + "</span></div>"); }
+
+  function goToDay(iso) { S.day = iso; S.routesMode = "day"; setView("routes"); }
+
+  function viewRoutesTable() {
+    var wrap = document.createDocumentFragment();
+    var bar = h('<section class="card pad" style="margin-bottom:16px; display:flex; gap:14px; align-items:center; flex-wrap:wrap; justify-content:space-between"></section>');
+    bar.appendChild(monthNav(S.month, function (m) { S.month = m; loadWindow().then(render); }));
+    bar.appendChild(segToggle([["route", "By route"], ["day", "By day"]], S.routesBy, function (v) { S.routesBy = v; render(); }));
+    wrap.appendChild(bar);
+
+    var dates = Object.keys(S.days).filter(function (d) { return (S.days[d].trips || []).length; }).sort();
+    if (!dates.length) {
+      wrap.appendChild(h('<section class="card"><div class="empty"><h3>No routes logged for ' + esc(fmtMonth(S.month)) + '</h3><p>Switch to Day to add one.</p></div></section>'));
+      return wrap;
+    }
+
+    var card = h('<section class="card"></section>');
+    var tw;
+    if (S.routesBy === "route") {
+      var head = "<tr><th>Date</th><th>Cart</th><th class='n'>#</th>" +
+        S.settings.products.map(function (p) { return "<th class='n'>" + esc(p.name) + "</th>"; }).join("") +
+        "<th class='n'>Gross</th><th class='n'>Seller</th><th class='n'>Expenses</th><th class='n'>Profit</th></tr>";
+      tw = h('<div class="tblwrap"><table class="t"><thead>' + head + "</thead><tbody></tbody></table></div>");
+      var tb = tw.querySelector("tbody");
+      var t1 = { gross: 0, commission: 0, expenses: 0, profit: 0 };
+      dates.forEach(function (iso) {
+        S.days[iso].trips.slice()
+          .sort(function (a, b) { return String(a.cart).localeCompare(String(b.cart)) || (a.trip || 0) - (b.trip || 0); })
+          .forEach(function (trip) {
+            var c = computeTrip(trip, S.settings);
+            t1.gross += c.gross; t1.commission += c.commission; t1.expenses += c.expenses; t1.profit += c.profit;
+            var tr = h('<tr style="cursor:pointer"></tr>');
+            tr.innerHTML = "<td>" + esc(fmtDate(iso, { month: "short", day: "numeric" })) + "</td>" +
+              "<td>" + esc(cartName(trip.cart)) + "</td>" +
+              "<td class='n'>" + esc(trip.trip || 1) + "</td>" +
+              S.settings.products.map(function (p) {
+                var l = c.lines[p.key];
+                return "<td class='n'" + (l.negative ? " style='color:var(--bad)'" : "") + ">" + intc(l.sold) + " · " + peso0(l.revenue) + "</td>";
+              }).join("") +
+              "<td class='n'>" + peso0(c.gross) + "</td>" +
+              "<td class='n'>" + peso0(-c.commission) + "</td>" +
+              "<td class='n'>" + peso0(-c.expenses) + "</td>" +
+              "<td class='n'>" + peso0(c.profit) + "</td>";
+            tr.addEventListener("click", function () {
+              if (canEdit()) openTripDialog(iso, trip.cart, trip); else goToDay(iso);
+            });
+            tb.appendChild(tr);
+          });
+      });
+      var cols = 3 + S.settings.products.length;
+      tb.appendChild(h("<tr class='tot'><td colspan='" + cols + "'>Total — " + esc(fmtMonth(S.month)) + "</td><td class='n'>" + peso0(t1.gross) + "</td><td class='n'>" + peso0(-t1.commission) + "</td><td class='n'>" + peso0(-t1.expenses) + "</td><td class='n'>" + peso0(t1.profit) + "</td></tr>"));
+    } else {
+      tw = h('<div class="tblwrap"><table class="t"><thead><tr><th>Date</th><th class="n">Routes</th><th class="n">Pieces sold</th><th class="n">Gross</th><th class="n">Seller</th><th class="n">Expenses</th><th class="n">Profit</th></tr></thead><tbody></tbody></table></div>');
+      var tb2 = tw.querySelector("tbody");
+      var t2 = { gross: 0, commission: 0, expenses: 0, profit: 0 };
+      dates.forEach(function (iso) {
+        var dc = computeDay(S.days[iso], S.settings);
+        t2.gross += dc.gross; t2.commission += dc.commission; t2.expenses += dc.expenses; t2.profit += dc.profit;
+        var tr = h('<tr style="cursor:pointer"></tr>');
+        tr.innerHTML = "<td>" + esc(fmtDate(iso, { weekday: "short", month: "short", day: "numeric" })) + "</td>" +
+          "<td class='n'>" + dc.trips + "</td>" +
+          "<td class='n'>" + intc(dc.pieces) + "</td>" +
+          "<td class='n'>" + peso0(dc.gross) + "</td>" +
+          "<td class='n'>" + peso0(-dc.commission) + "</td>" +
+          "<td class='n'>" + peso0(-dc.expenses) + "</td>" +
+          "<td class='n'>" + peso0(dc.profit) + "</td>";
+        tr.addEventListener("click", function () { goToDay(iso); });
+        tb2.appendChild(tr);
+      });
+      tb2.appendChild(h("<tr class='tot'><td colspan='3'>Total — " + esc(fmtMonth(S.month)) + "</td><td class='n'>" + peso0(t2.gross) + "</td><td class='n'>" + peso0(-t2.commission) + "</td><td class='n'>" + peso0(-t2.expenses) + "</td><td class='n'>" + peso0(t2.profit) + "</td></tr>"));
+    }
+    card.appendChild(tw);
+    wrap.appendChild(card);
+    return wrap;
+  }
 
   function shiftDay(delta) {
     var d = new Date(S.day + "T00:00:00"); d.setDate(d.getDate() + delta);
