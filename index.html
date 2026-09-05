@@ -14,7 +14,7 @@
     --p-malunggay:#4E7C43; --p-ube:#7E5BB0; --p-spanish:#BE8329; --p-other:#5A7A8C;
     --shadow:0 1px 2px rgba(40,32,16,.04), 0 6px 20px -12px rgba(40,32,16,.18);
     --radius:14px; --radius-sm:9px;
-    --maxw:1080px;
+    --maxw:1360px;
     color-scheme:light;
   }
   @media (prefers-color-scheme: dark) {
@@ -146,8 +146,11 @@
 
   /* ---------- tables ---------- */
   .tblwrap { overflow-x:auto; }
-  table.t { width:100%; border-collapse:collapse; font-size:13.5px; }
-  table.t th, table.t td { padding:9px 12px; text-align:left; border-bottom:1px solid var(--line-2); white-space:nowrap; }
+  table.t { width:100%; border-collapse:collapse; font-size:13px; }
+  table.t th, table.t td { padding:7px 10px; text-align:left; border-bottom:1px solid var(--line-2); white-space:nowrap; }
+  table.t td .stack { display:flex; flex-direction:column; gap:0; line-height:1.3; align-items:flex-end; }
+  table.t td .stack b { font-weight:600; }
+  table.t td .stack small { font-size:11px; color:var(--ink-3); font-weight:400; }
   table.t th { font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--ink-3); font-weight:600; }
   table.t td.n, table.t th.n { text-align:right; font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; }
   table.t tr:last-child td { border-bottom:0; }
@@ -927,7 +930,7 @@
     var tw;
     if (S.routesBy === "route") {
       var head = "<tr><th>Date</th><th>Cart</th><th class='n'>#</th>" +
-        S.settings.products.map(function (p) { return "<th class='n'>" + esc(p.name) + "</th>"; }).join("") +
+        S.settings.products.map(function (p) { return "<th class='n' title='" + esc(p.name) + "'>" + esc(p.name.split(" ")[0]) + "</th>"; }).join("") +
         "<th class='n'>Gross</th><th class='n'>Seller</th><th class='n'>Expenses</th><th class='n'>Profit</th></tr>";
       tw = h('<div class="tblwrap"><table class="t"><thead>' + head + "</thead><tbody></tbody></table></div>");
       var tb = tw.querySelector("tbody");
@@ -944,7 +947,7 @@
               "<td class='n'>" + esc(trip.trip || 1) + "</td>" +
               S.settings.products.map(function (p) {
                 var l = c.lines[p.key];
-                return "<td class='n'" + (l.negative ? " style='color:var(--bad)'" : "") + ">" + intc(l.sold) + " · " + peso0(l.revenue) + "</td>";
+                return "<td class='n'" + (l.negative ? " style='color:var(--bad)'" : "") + "><div class='stack'><b>" + intc(l.sold) + "</b><small>" + peso0(l.revenue) + "</small></div></td>";
               }).join("") +
               "<td class='n'>" + peso0(c.gross) + "</td>" +
               "<td class='n'>" + peso0(-c.commission) + "</td>" +
